@@ -11,27 +11,34 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Path of the env file used in development
+ENV_PATH = os.path.join(BASE_DIR, "env/.env.local").replace("\\", "/")
+
+# Load environment variables
+load_dotenv(ENV_PATH, override=True)
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.environ["SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: list[str] = ["*"]
-CSRF_TRUSTED_ORIGINS = []
+ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1", ".fly.dev"]
+
+CSRF_TRUSTED_ORIGINS: list[str] = ["https://*.fly.dev"]
+
 
 # Application definition
 
@@ -43,9 +50,16 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Third party app
+    "phonenumber_field",
     "rest_framework",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
+    "django_filters",
     # Apps
     "receiver",
+    "commons",
+    "users",
 ]
 
 MIDDLEWARE = [
@@ -89,13 +103,7 @@ DATABASES = {
         "USER": os.environ["DATABASE_USER"],
         "HOST": os.environ["DATABASE_HOST"],
         "PASSWORD": os.environ["DATABASE_PASSWORD"],
-    }
-}
-
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.environ["REDIS_URL"],
+        "CONN_MAX_AGE": 300,  # 5 minutes
     }
 }
 
@@ -128,13 +136,17 @@ TIME_ZONE = "Africa/Nairobi"
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
+# Absolute path to the directory static files should be collected to.
+# Don't put anything in this directory yourself; store your static files
+# in apps' "static/" subdirectories and in STATICFILES_DIRS.
+# Example: "/home/media/media.lawrence.com/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static").replace("\\", "/")
 
-STATIC_URL = "static/"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -142,13 +154,73 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "payouts.auth.BearerAuthentication",
-    ]
+AUTH_USER_MODEL = "users.User"
+
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ["REDIS_URL"],
+    }
 }
 
-# try to load local_settings.py if it exists and DEBUG=True
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=21),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=21),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": (
+        "rest_framework_simplejwt.tokens.AccessToken",
+        "users.tokens.UserRefreshToken",
+    ),
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ROTATE_REFRESH_TOKENS": True,
+}
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_THROTTLE_RATES": {
+        "authentication_throttle": "5/hour",
+        "mpesa_stkpush_throttle": "3/minute",
+        "mpesa_withdrawal_throttle": "1/minute",
+    },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "commons.pagination.StandardPageNumberPagination",
+}
+
+# Celery settings
+CELERY_CACHE_BACKEND = "default"
+CELERY_TASK_SOFT_TIME_LIMIT = 60 * 5  # Tasks expire after 5 minutes
+CELERY_BROKER_URL = os.environ["REDIS_URL"]
+CELERY_ACCEPT_CONTENT = {"application/json"}
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TASK_SERIALIZER = "json"
+CELERY_TIMEZONE = "Africa/Nairobi"
+
+# DRF Spectacular Settings for Swagger
+SPECTACULAR_SETTINGS = {
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_SETTINGS": {
+        "defaultModelsExpandDepth": -1,
+        "persistAuthorization": True,
+    },
+    # Only authenticated users can access the schema and documentation views.
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
+    "AUTHENTICATION_WHITELIST": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "SERVE_AUTHENTICATION": [
+        # User can only view swagger docs if they've logged in via django admin
+        "rest_framework.authentication.SessionAuthentication",
+        # "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+}
+
+# If DEV_ENV=True, the system is running in dev environment so load local settings instead
+SERVER_IN_PROD = os.getenv("SERVER_IN_PROD", "0")
 if DEBUG:
     try:
         from payouts.local_settings import *  # noqa

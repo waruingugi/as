@@ -16,7 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -25,6 +25,7 @@ from drf_spectacular.views import (
 
 urlpatterns = [
     path("api/admin/", admin.site.urls),
+    path("api/", include("workers.api")),
     # Swagger documentation
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

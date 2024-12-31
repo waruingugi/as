@@ -1,0 +1,18 @@
+from uuid import uuid4
+
+from rest_framework import serializers
+
+from workers.models import Worker
+
+
+class WorkerBaseSerializer(serializers.ModelSerializer):
+    key = serializers.CharField(default=uuid4, allow_blank=True)
+
+    class Meta:
+        model = Worker
+        fields = "__all__"
+
+
+class WorkerCreateSerializer(WorkerBaseSerializer):
+    class Meta(WorkerBaseSerializer.Meta):
+        read_only_fields = ("id", "created_at", "updated_at")

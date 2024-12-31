@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "receiver",
     "commons",
     "users",
+    "workers",
 ]
 
 MIDDLEWARE = [

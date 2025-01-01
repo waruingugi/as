@@ -1,0 +1,33 @@
+from uuid import uuid4
+
+from django.test import TestCase
+
+from commons.constants import User
+
+
+class UserModelTests(TestCase):
+    def setUp(self) -> None:
+        """Set up test data."""
+        self.test_phone_number = "+254701301401"
+        self.test_password = uuid4().hex
+
+        self.user = User.objects.create_user(
+            phone_number=self.test_phone_number, password=self.test_password
+        )
+
+    def test_create_user(self) -> None:
+        """Assert fields created have the same value as those passed."""
+
+        self.assertEqual(self.user.phone_number, self.test_phone_number)
+        self.assertTrue(self.user.check_password(self.test_password))
+        self.assertFalse(self.user.is_verified)
+        self.assertTrue(self.user.is_active)
+        self.assertFalse(self.user.is_staff)
+
+    def test_phone_number_is_unique(self) -> None:
+        """Assert phone number is unique for all users."""
+
+        with self.assertRaises(Exception):
+            User.objects.create_user(
+                phone_number=self.test_phone_number, password=uuid4().hex
+            )

@@ -16,3 +16,12 @@ class WorkerBaseSerializer(serializers.ModelSerializer):
 class WorkerCreateSerializer(WorkerBaseSerializer):
     class Meta(WorkerBaseSerializer.Meta):
         read_only_fields = ("id", "created_at", "updated_at")
+
+
+class WorkerListSerializer(WorkerBaseSerializer):
+    pass
+
+
+class WorkerUpdateSerializer(WorkerBaseSerializer):
+    class Meta(WorkerBaseSerializer.Meta):
+        read_only_fields = ("id", "created_at", "updated_at")

@@ -3,3 +3,9 @@ from enum import Enum
 
 class ErrorCodes(str, Enum):
     INVALID_PHONE_NUMBER = "This phone number is incorrect. Please try again."
+    USERNAME_EXISTS = "This username is already taken."
+    USERNAME_IS_INVALID = "Username can only contain letters[a-z] and numbers[0-9]."
+    USERNAME_IS_TOO_SHORT = "This username is too short."
+    USERNAME_IS_TOO_LONG = "This username is too long."
+    USER_IS_VERIFIED = "This user is already verified."
+    USER_DOES_NOT_EXIST = "This user does not exist"

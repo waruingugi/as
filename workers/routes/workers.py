@@ -11,6 +11,6 @@ app_Name = "workers"
 
 urlpatterns = [
     path("create/", WorkerCreateView.as_view(), name="create"),
-    path("update/", WorkerRetrieveUpdateView.as_view(), name="update"),
-    path("list/", WorkerListView.as_view(), name="list"),
+    path("<str:id>/", WorkerRetrieveUpdateView.as_view(), name="detail"),
+    path("", WorkerListView.as_view(), name="list"),
 ]

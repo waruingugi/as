@@ -1,6 +1,6 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
-from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAPIView
 
 from commons.pagination import StandardPageNumberPagination
 from commons.permissions import IsStaffPermission
@@ -33,7 +33,8 @@ class WorkerListView(ListAPIView):
     ordering_fields = ["created_at"]
 
 
-class WorkerRetrieveUpdateView(RetrieveAPIView):
+class WorkerRetrieveUpdateView(RetrieveUpdateAPIView):
     lookup_field = "id"
-    queryset = WorkerUpdateSerializer
+    queryset = Worker.objects.all()
+    serializer_class = WorkerUpdateSerializer
     permission_classes = [IsStaffPermission]

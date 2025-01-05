@@ -76,3 +76,44 @@ class WorkerListViewTestCase(UserBaseAPITestCase):
         self.force_authenticate_user()
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class WorkerRetrieveUpdateViewTestCase(UserBaseAPITestCase):
+    def setUp(self) -> None:
+        # Create a test worker
+        self.worker = Worker.objects.create(
+            name="betika-node-001", app=BettingApps.BETIKA.value
+        )
+
+        # Set the endpoint URL
+        self.url = reverse("workers:detail", kwargs={"id": self.worker.id})
+        self.force_authenticate_staff_user()
+
+    def test_can_retrieve_worker_as_staff(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["name"], self.worker.name)
+        self.assertEqual(response.data["app"], self.worker.app)
+
+    def test_can_update_worker_as_staff(self):
+        update_data = {"name": "betika-node-004"}
+        response = self.client.patch(self.url, update_data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.worker.refresh_from_db()
+        self.assertEqual(self.worker.name, "betika-node-004")
+        self.assertEqual(self.worker.app, BettingApps.BETIKA.value)
+
+    def test_cannot_update_worker_as_regular_user(self):
+        self.force_authenticate_user()
+        update_data = {"name": "betika-node-004"}
+        response = self.client.patch(self.url, update_data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_cannot_retrieve_worker_as_regular_user(self):
+        self.force_authenticate_user()
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

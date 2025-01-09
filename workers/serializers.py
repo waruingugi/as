@@ -6,7 +6,7 @@ from workers.models import Worker
 
 
 class WorkerBaseSerializer(serializers.ModelSerializer):
-    key = serializers.UUIDField(default=uuid4, required=False)
+    key = serializers.CharField(default=uuid4().hex, required=False)
 
     class Meta:
         model = Worker

@@ -7,7 +7,7 @@ from workers.models import Worker
 from workers.serializers import WorkerListSerializer
 
 
-class WorkerCreateAPIViewTests(UserBaseAPITestCase):
+class WorkerCreateViewTests(UserBaseAPITestCase):
     def setUp(self) -> None:
         self.create_url = reverse("workers:create")
         self.data = {"app": BettingApps.BETIKA.value, "name": "betika-node-001"}
@@ -24,7 +24,7 @@ class WorkerCreateAPIViewTests(UserBaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class WorkerListViewTestCase(UserBaseAPITestCase):
+class WorkerListViewTests(UserBaseAPITestCase):
     def setUp(self) -> None:
         self.list_url = reverse("workers:list")
         Worker.objects.bulk_create(
@@ -72,13 +72,13 @@ class WorkerListViewTestCase(UserBaseAPITestCase):
             <= results[2]["created_at"]
         )
 
-    def test_list_workers_as_user_is_forbidden(self) -> None:
+    def test_permission_denied_for_non_staff(self) -> None:
         self.force_authenticate_user()
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class WorkerRetrieveUpdateViewTestCase(UserBaseAPITestCase):
+class WorkerRetrieveUpdateViewTests(UserBaseAPITestCase):
     def setUp(self) -> None:
         # Create a test worker
         self.worker = Worker.objects.create(

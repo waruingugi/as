@@ -15,7 +15,7 @@ from workers.models import Worker
 
 class MultiplierCreateView(CreateAPIView):
     serializer_class = MultiplierCreateSerializer
-    authentication_classes = []
+    permission_classes = []
 
     def perform_create(self, serializer):
         # Get API key from the header
@@ -47,6 +47,5 @@ class MultiplierListView(ListAPIView):
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    search_fields = ["name"]
-    filterset_fields = ["app"]
+    search_fields = ["worker__name", "worker_app"]
     ordering_fields = ["-created_at"]

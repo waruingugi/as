@@ -6,7 +6,7 @@ from users.constants import MAX_USERNAME_LEN, MIN_USERNAME_LEN
 from users.models import User
 
 
-class UserCreateAPIViewTests(UserBaseAPITestCase):
+class UserCreateViewTests(UserBaseAPITestCase):
     def setUp(self) -> None:
         self.create_url = reverse("users:create")
         self.data = {
@@ -94,7 +94,7 @@ class UserCreateAPIViewTests(UserBaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class UserRetrieveUpdateAPIViewTests(UserBaseAPITestCase):
+class UserRetrieveUpdateViewTests(UserBaseAPITestCase):
     def setUp(self) -> None:
         self.user = self.create_user()
         self.foreign_user = self.create_foreign_user()

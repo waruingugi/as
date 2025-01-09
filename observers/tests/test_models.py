@@ -11,7 +11,7 @@ class MultiplierModelTests(TestCase):
     def setUp(self) -> None:
         # Create a Worker instance
         self.worker = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name="betika-node-001", key=uuid4()
+            app=BettingApps.BETIKA.value, name="betika-node-001", key=uuid4().hex
         )
 
         # Create Multiplier instances

@@ -25,3 +25,9 @@ class WorkerListSerializer(WorkerBaseSerializer):
 class WorkerUpdateSerializer(WorkerBaseSerializer):
     class Meta(WorkerBaseSerializer.Meta):
         read_only_fields = ("id", "created_at", "updated_at")
+
+
+class WorkerReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Worker
+        fields = ("app", "name")

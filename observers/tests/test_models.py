@@ -3,7 +3,7 @@ from uuid import uuid4
 from django.test import TestCase
 
 from commons.constants import BettingApps
-from observer.models import Multiplier
+from observers.models import Multiplier
 from workers.models import Worker
 
 

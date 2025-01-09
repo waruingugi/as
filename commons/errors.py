@@ -9,3 +9,7 @@ class ErrorCodes(str, Enum):
     USERNAME_IS_TOO_LONG = "This username is too long."
     USER_IS_VERIFIED = "This user is already verified."
     USER_DOES_NOT_EXIST = "This user does not exist"
+    INVALID_MULTIPLIER_STRING = "Multiplier string has an invalid format."
+    EMPTY_MULTIPLIER_STRING = "Multiplier string can not be empty or null"
+    WORKER_API_KEY_IS_REQUIRED = "Worker API Key is required"
+    MULTIPLIERS_NOT_FOUND = "No valid multipliers found."

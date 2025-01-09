@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("observer", "0001_initial"),
+        ("observers", "0001_initial"),
         ("workers", "0003_alter_worker_app_alter_worker_key_alter_worker_name"),
     ]
 

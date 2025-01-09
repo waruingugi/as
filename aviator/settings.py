@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_filters",
     # Apps
-    "observer",
+    "observers",
     "commons",
     "users",
     "workers",

@@ -9,6 +9,7 @@ from commons.pagination import StandardPageNumberPagination
 from commons.permissions import IsStaffPermission
 from observers.models import Multiplier
 from observers.serializers import MultiplierCreateSerializer, MultiplierReadSerializer
+from observers.utils import get_new_multipliers
 from workers.models import Worker
 
 
@@ -24,10 +25,15 @@ class MultiplierCreateView(CreateAPIView):
 
         # Authenticate the worker
         worker = get_object_or_404(Worker, key=api_key)
+        multipliers_list = serializer.validated_data["multipliers"]
 
-        # Save the payouts
-        payouts = serializer.validated_data["multipliers"]
-        multipliers = [Multiplier(worker=worker, crash=payout) for payout in payouts]
+        # Reverse the multipliers_list because the last element is the earliest payout
+        new_multipliers = get_new_multipliers(worker.id, multipliers_list)
+        new_multipliers.reverse()
+
+        multipliers = [
+            Multiplier(worker=worker, crash=crash) for crash in new_multipliers
+        ]
         Multiplier.objects.bulk_create(multipliers)
 
 
@@ -43,4 +49,4 @@ class MultiplierListView(ListAPIView):
     ]
     search_fields = ["name"]
     filterset_fields = ["app"]
-    ordering_fields = ["created_at"]
+    ordering_fields = ["-created_at"]

@@ -8,7 +8,7 @@ from observers.utils import parse_multipliers
 class MultiplierCreateSerializer(serializers.Serializer):
     multipliers = serializers.CharField()
 
-    def validate_multipliers(self, value):
+    def validate_multipliers(self, value) -> list[float] | None:
         """
         Custom validation for the multipliers field to ensure it's properly formatted.
         """

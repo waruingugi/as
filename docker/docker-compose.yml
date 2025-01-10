@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+
+  app:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    image: aviator-backend
+    networks:
+      - aviator-backend-network
+    container_name: aviator-container
+    restart: always
+    volumes:
+      - .:/data
+    ports:
+      - "8000:8000"
+
+  celery_worker:
+    container_name: celery-worker
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    networks:
+      - aviator-backend-network
+    command: celery -A as as -l info
+    volumes:
+      - .:/data
+    depends_on:
+      - app
+
+  celery_beat:
+    container_name: celery-beat
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    networks:
+      - aviator-backend-network
+    command: celery -A aviator.celery  -l info
+    volumes:
+      - .:/data
+    depends_on:
+      - app
+
+volumes:
+  db_data:
+
+networks:
+  majibu-backend-network:
+    name: as-backend-network

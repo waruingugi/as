@@ -47,5 +47,5 @@ class MultiplierListView(ListAPIView):
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    search_fields = ["worker__name", "worker_app"]
+    search_fields = ["worker__name", "worker__app"]
     ordering_fields = ["-created_at"]

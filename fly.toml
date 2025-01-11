@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for majibu-app-dev on 2024-07-05T19:06:10+03:00
+# fly.toml app configuration file generated for as-api on 2025-01-10T20:41:55+03:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -13,7 +13,18 @@ kill_timeout = '10s'
 
 [env]
   DJANGO_SETTINGS_MODULE = 'aviator.settings'
-  TZ = "Africa/Nairobi"
+  TZ = 'Africa/Nairobi'
+
+[processes]
+  app = ''
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
 
 [[services]]
   protocol = 'tcp'
@@ -40,14 +51,10 @@ kill_timeout = '10s'
     grace_period = '1s'
 
 [[vm]]
+  size = 'shared-cpu-1x'
   memory = '256MB'
   cpu_kind = 'shared'
-  cpus = 1
-  size = "shared-cpu-1x"
 
 [[statics]]
   guest_path = '/app/static'
   url_prefix = '/static'
-
-[processes]
-  app = ""

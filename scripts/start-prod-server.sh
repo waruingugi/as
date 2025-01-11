@@ -4,4 +4,4 @@
 # celery -A majibu purge -f
 python manage.py migrate
 python manage.py collectstatic --no-input
-gunicorn majibu.wsgi --bind 0.0.0.0:8000 --timeout 60 --access-logfile - --error-logfile -
+gunicorn aviator.wsgi --bind 0.0.0.0:8000 --timeout 60 --access-logfile - --error-logfile -

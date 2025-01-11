@@ -100,10 +100,10 @@ WSGI_APPLICATION = "aviator.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ["DATABASE_NAME"],
-        "USER": os.environ["DATABASE_USER"],
-        "HOST": os.environ["DATABASE_HOST"],
-        "PASSWORD": os.environ["DATABASE_PASSWORD"],
+        "NAME": os.environ["POSTGRES_DB"],
+        "USER": os.environ["POSTGRES_USER"],
+        "HOST": os.environ["POSTGRES_HOST"],
+        "PASSWORD": os.environ["POSTGRES_PASSWORD"],
         "CONN_MAX_AGE": 300,  # 5 minutes
     }
 }
@@ -139,6 +139,11 @@ USE_I18N = True
 
 USE_TZ = False
 
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+STATIC_URL = "static/"
 
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
@@ -220,8 +225,7 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
-# If DEV_ENV=True, the system is running in dev environment so load local settings instead
-SERVER_IN_PROD = os.getenv("SERVER_IN_PROD", "0")
+# If DEBUG=True, the system is running in dev environment so load local settings instead
 if DEBUG:
     try:
         from aviator.local_settings import *  # noqa

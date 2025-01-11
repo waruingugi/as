@@ -33,7 +33,8 @@ load_dotenv(ENV_PATH, override=True)
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = bool(int(os.environ["DEBUG"]))
 
 ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1", ".fly.dev"]
 
@@ -174,10 +175,7 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=21),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=21),
     "AUTH_HEADER_TYPES": ("Bearer",),
-    "AUTH_TOKEN_CLASSES": (
-        "rest_framework_simplejwt.tokens.AccessToken",
-        "users.tokens.UserRefreshToken",
-    ),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "BLACKLIST_AFTER_ROTATION": True,
     "ROTATE_REFRESH_TOKENS": True,
 }

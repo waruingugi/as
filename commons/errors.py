@@ -13,3 +13,6 @@ class ErrorCodes(str, Enum):
     EMPTY_MULTIPLIER_STRING = "Multiplier string can not be empty or null"
     WORKER_API_KEY_IS_REQUIRED = "Worker API Key is required"
     MULTIPLIERS_NOT_FOUND = "No valid multipliers found."
+    INCORRECT_USERNAME_OR_PASSWORD = (
+        "The phone number or password is incorrect. Please try again."
+    )

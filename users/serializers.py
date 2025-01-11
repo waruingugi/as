@@ -1,9 +1,37 @@
 from django.contrib.auth.password_validation import validate_password
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from commons.errors import ErrorCodes
 from commons.serializers import UserPhoneNumberField
 from users.models import User
 from users.validators import PhoneNumberIsAvailableValidator, UsernameValidator
+
+
+class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
+    default_error_messages = {
+        "no_active_account": _(ErrorCodes.INCORRECT_USERNAME_OR_PASSWORD.value)
+    }
+
+    def validate(self, attrs):
+        """Change phone number to standard format"""
+        phone_field = UserPhoneNumberField()
+        # Username is phone number field(as specified in User model)
+        attrs[self.username_field] = phone_field.to_internal_value(
+            attrs[self.username_field]
+        )
+
+        data = super().validate(attrs)
+
+        token = self.get_token(self.user)
+
+        data["refresh"] = str(token)
+        data["access"] = str(token.access_token)
+        data["exp"] = token.payload["exp"]
+        data["user_id"] = token.payload["user_id"]
+
+        return data
 
 
 class BaseUserCreateSerializer(serializers.ModelSerializer):

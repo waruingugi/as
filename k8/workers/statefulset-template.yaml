@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ${APP_NAME}-seed
+  namespace: ${APP_NAME}
+spec:
+  replicas: 3
+  serviceName: ${APP_NAME}-svc-service
+  selector:
+    matchLabels:
+      app: ${APP_NAME}-pod
+  template:
+    metadata:
+      labels:
+        app: ${APP_NAME}-pod
+    spec:
+      imagePullSecrets:
+      - name: github-docker-secret
+      containers:
+      - name: chrome-browser
+        image: ghcr.io/waruingugi/chrome-browser:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5900
+          name: vnc
+        env:
+        - name: VNC_SCREEN_SIZE
+          value: "1024x768"
+        - name: VNC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: chrome-secrets
+              key: VNC_PASSWORD
+        resources:
+          requests:
+            memory: "512Mi"  # Minimum amount of memory requested per pod
+            cpu: "500m"      # Minimum amount of CPU requested per pod
+          limits:
+            memory: "2Gi"    # Maximum amount of memory allowed per pod
+            cpu: "2"         # Maximum amount of CPU allowed per pod

@@ -7,4 +7,4 @@ class ObserverConfig(AppConfig):
 
     def ready(self):
         # This will import the signals when the app is ready
-        pass  # type: ignore
+        import observers.signals  # noqa: F401

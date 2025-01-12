@@ -28,8 +28,7 @@ class WorkerListView(ListAPIView):
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    search_fields = ["name"]
-    filterset_fields = ["app"]
+    search_fields = ["name", "app"]
     ordering_fields = ["created_at"]
 
 

@@ -65,6 +65,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "log_request_id.middleware.RequestIDMiddleware",  # Third party app
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -72,6 +73,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Custom middleware
+    "commons.middlewares.UserIsActiveMiddleware",
+    "commons.middlewares.RequestResponseLoggerMiddleware",
 ]
 
 ROOT_URLCONF = "aviator.urls"

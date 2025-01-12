@@ -16,7 +16,7 @@ kill_timeout = '10s'
   TZ = 'Africa/Nairobi'
 
 [processes]
-  app = ''
+  app = 'gunicorn aviator.wsgi --bind 0.0.0.0:8000 --timeout 60 --access-logfile - --error-logfile -'
 
 [http_service]
   internal_port = 8000
@@ -25,8 +25,6 @@ kill_timeout = '10s'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
-  [http_service.http_options]
-    idle_timeout = 600
 
 [[services]]
   protocol = 'tcp'
@@ -53,10 +51,13 @@ kill_timeout = '10s'
     grace_period = '1s'
 
 [[vm]]
-  size = 'shared-cpu-1x'
+  size = 'shared-cpu-2x'
   memory = '512MB'
   cpu_kind = 'shared'
 
 [[statics]]
   guest_path = '/app/static'
   url_prefix = '/static'
+
+[deploy]
+  release_command = "python manage.py migrate --noinput && python manage.py collectstatic --noinput"

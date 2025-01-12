@@ -72,6 +72,18 @@ class WorkerListViewTests(UserBaseAPITestCase):
             <= results[2]["created_at"]
         )
 
+    def test_filter_workers_by_app(self) -> None:
+        response = self.client.get(self.list_url, {"app": BettingApps.BETIKA.value})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Ensure that all returned workers have the app field set to 'BETIKA'
+        for worker in response.data["results"]:
+            self.assertEqual(worker["app"], BettingApps.BETIKA.value)
+
+        # Verify the correct number of workers are returned
+        self.assertEqual(len(response.data["results"]), 3)
+
     def test_permission_denied_for_non_staff(self) -> None:
         self.force_authenticate_user()
         response = self.client.get(self.list_url)

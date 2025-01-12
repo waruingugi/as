@@ -4,6 +4,7 @@ from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAP
 
 from commons.pagination import StandardPageNumberPagination
 from commons.permissions import IsStaffPermission
+from workers.filters import WorkerFilter
 from workers.models import Worker
 from workers.serializers import (
     WorkerCreateSerializer,
@@ -28,7 +29,8 @@ class WorkerListView(ListAPIView):
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    search_fields = ["name", "app"]
+    filterset_class = WorkerFilter
+    search_fields = ["name"]
     ordering_fields = ["created_at"]
 
 

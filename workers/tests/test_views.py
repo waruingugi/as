@@ -18,6 +18,28 @@ class WorkerCreateViewTests(UserBaseAPITestCase):
         self.assertIn("app", response.data)
         self.assertEqual(response.data["app"], BettingApps.BETIKA.value)
 
+    def test_unique_worker_key_constraint_is_enforced(self) -> None:
+        response1 = self.client.post(
+            self.create_url,
+            {"app": BettingApps.BETIKA.value, "name": "betika-node-002"},
+        )
+        response2 = self.client.post(
+            self.create_url,
+            {"app": BettingApps.BETIKA.value, "name": "betika-node-003"},
+        )
+        self.assertNotEqual(response1.data["key"], response2.data["key"])
+
+    def test_unique_worker_name_constraint_is_enforced(self) -> None:
+        self.client.post(
+            self.create_url,
+            {"app": BettingApps.BETIKA.value, "name": "betika-node-002"},
+        )
+        response = self.client.post(
+            self.create_url,
+            {"app": BettingApps.BETIKA.value, "name": "betika-node-002"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_invalid_worker_name(self) -> None:
         data = {"app": "invalid_worker_name", "name": "betika-node-001"}
         response = self.client.post(self.create_url, data)

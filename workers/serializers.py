@@ -1,12 +1,11 @@
-from uuid import uuid4
-
 from rest_framework import serializers
 
+from commons.utils import generate_uuid
 from workers.models import Worker
 
 
 class WorkerBaseSerializer(serializers.ModelSerializer):
-    key = serializers.CharField(default=uuid4().hex, required=False)
+    key = serializers.CharField(default=generate_uuid, required=False)
 
     class Meta:
         model = Worker

@@ -60,4 +60,4 @@ kill_timeout = '10s'
   url_prefix = '/static'
 
 [deploy]
-  release_command = "/bin/bash -c python manage.py migrate --noinput && python manage.py collectstatic --noinput"
+  release_command = "/bin/bash -c python manage.py migrate && python manage.py collectstatic --noinput"

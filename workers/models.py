@@ -11,7 +11,9 @@ class Worker(Base):
         max_length=255, choices=[(app, app.value) for app in BettingApps]
     )
     name = models.CharField(max_length=255, unique=True)
-    key = models.CharField(max_length=255, default=uuid4().hex, null=False)
+    key = models.CharField(
+        max_length=255, default=lambda: uuid4().hex, unique=True, null=False
+    )
 
     def __str__(self):
         return self.name

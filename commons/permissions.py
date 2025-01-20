@@ -1,6 +1,28 @@
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.views import APIView
+
+from commons.errors import ErrorCodes
+from workers.models import Worker
+
+
+class IsWorkerPermission(BasePermission):
+    """
+    Custom permission to only allow workers to make permissions
+    """
+
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        api_key = request.headers.get("API-KEY")
+        if not api_key:
+            raise AuthenticationFailed(ErrorCodes.WORKER_API_KEY_IS_REQUIRED.value)
+        try:
+            worker = Worker.objects.get(key=api_key)
+        except Worker.DoesNotExist:
+            raise AuthenticationFailed(ErrorCodes.INVALID_WORKER_API_KEY.value)
+
+        view.worker = worker
+        return True
 
 
 class IsStaffPermission(BasePermission):

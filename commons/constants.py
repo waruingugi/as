@@ -11,3 +11,7 @@ WORKER_API_KEY_LEN: int = 32
 
 class BettingApps(str, Enum):
     BETIKA = "BETIKA"
+
+
+class CacheKeys:
+    WORKER_KEY = "worker_key:{}"

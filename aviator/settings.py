@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "commons",
     "users",
     "workers",
+    "orchestrator",
 ]
 
 MIDDLEWARE = [

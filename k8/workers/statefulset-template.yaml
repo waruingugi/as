@@ -36,5 +36,5 @@ spec:
             memory: "512Mi"  # Minimum amount of memory requested per pod
             cpu: "500m"      # Minimum amount of CPU requested per pod
           limits:
-            memory: "2Gi"    # Maximum amount of memory allowed per pod
-            cpu: "2"         # Maximum amount of CPU allowed per pod
+            memory: "16Gi"    # Maximum amount of memory allowed per pod
+            cpu: "24"         # Maximum amount of CPU allowed per pod

@@ -24,8 +24,27 @@ spec:
         - containerPort: 5900
           name: vnc
         env:
-        - name: VNC_SCREEN_SIZE
-          value: "1024x768"
+        # Expose pod name as an environment variable
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        # Dynamically fetch environment variables from the Secret
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: chrome-secrets
+              key: pod-${HOSTNAME##*-}-API_KEY
+        - name: PHONE_NUMBER
+          valueFrom:
+            secretKeyRef:
+              name: chrome-secrets
+              key: pod-${HOSTNAME##*-}-PHONE_NUMBER
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: chrome-secrets
+              key: pod-${HOSTNAME##*-}-PASSWORD
         - name: VNC_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -36,5 +55,5 @@ spec:
             memory: "512Mi"  # Minimum amount of memory requested per pod
             cpu: "500m"      # Minimum amount of CPU requested per pod
           limits:
-            memory: "16Gi"    # Maximum amount of memory allowed per pod
-            cpu: "24"         # Maximum amount of CPU allowed per pod
+            memory: "8Gi"    # Maximum amount of memory allowed per pod
+            cpu: "8"         # Maximum amount of CPU allowed per pod

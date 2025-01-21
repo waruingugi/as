@@ -18,38 +18,21 @@ spec:
       - name: github-docker-secret
       containers:
       - name: chrome-browser
-        image: ghcr.io/waruingugi/chrome-browser:latest
+        image: ghcr.io/waruingugi/${APP_NAME}-chrome-browser:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5900
-          name: vnc
+          name: chrome-browser
         env:
         # Expose pod name as an environment variable
         - name: POD_NAME
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        # Dynamically fetch environment variables from the Secret
-        - name: API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: chrome-secrets
-              key: pod-${HOSTNAME##*-}-API_KEY
-        - name: PHONE_NUMBER
-          valueFrom:
-            secretKeyRef:
-              name: chrome-secrets
-              key: pod-${HOSTNAME##*-}-PHONE_NUMBER
-        - name: PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: chrome-secrets
-              key: pod-${HOSTNAME##*-}-PASSWORD
-        - name: VNC_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: chrome-secrets
-              key: VNC_PASSWORD
+        # Load all environment variables from the Secret
+        envFrom:
+        - secretRef:
+            name: chrome-secrets
         resources:
           requests:
             memory: "512Mi"  # Minimum amount of memory requested per pod

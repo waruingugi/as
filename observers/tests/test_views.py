@@ -17,11 +17,32 @@ class MultiplierCreateViewTests(APITestCase):
         self.worker = Worker.objects.create(
             app=BettingApps.BETIKA.value, name=SeedNames.list()[0], key=uuid4().hex
         )
-        self.data = {"multipliers": "1.32x, 1.41x, 2.09x, 3.12x"}
+        self.valid_data = {"multipliers": [1.32, 1.41, 2.09, 3.12]}
+
+    def test_create_non_float_multipliers_successfully(self) -> None:
+        """
+        Test that valid multipliers are successfully created.
+        """
+        response = self.client.post(
+            self.create_url,
+            {"multipliers": [1.00, 1.0, 2, 3.12]},
+            format="json",
+            HTTP_API_KEY=f"{self.worker.key}",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Multiplier.objects.count(), 4)
+        self.assertEqual(float(Multiplier.objects.first().crash), 1.00)
 
     def test_create_multipliers_successfully(self) -> None:
+        """
+        Test that valid multipliers are successfully created.
+        """
         response = self.client.post(
-            self.create_url, self.data, HTTP_API_KEY=f"{self.worker.key}"
+            self.create_url,
+            self.valid_data,
+            format="json",
+            HTTP_API_KEY=f"{self.worker.key}",
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -29,8 +50,62 @@ class MultiplierCreateViewTests(APITestCase):
         self.assertEqual(float(Multiplier.objects.first().crash), 1.32)  # type: ignore
 
     def test_missing_api_key_raises_error(self) -> None:
-        response = self.client.post(self.create_url, self.data)
+        """
+        Test that missing API-KEY in the header raises an authentication error.
+        """
+        response = self.client.post(self.create_url, self.valid_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_invalid_api_key_raises_error(self) -> None:
+        """
+        Test that an invalid API-KEY raises an authentication error.
+        """
+        response = self.client.post(
+            self.create_url,
+            self.valid_data,
+            format="json",
+            HTTP_API_KEY="invalid-api-key",
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_empty_multipliers_list_raises_error(self) -> None:
+        """
+        Test that an empty multipliers list raises a validation error.
+        """
+        response = self.client.post(
+            self.create_url,
+            {"multipliers": []},
+            format="json",
+            HTTP_API_KEY=f"{self.worker.key}",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("multipliers", response.data)
+
+    def test_non_numeric_multipliers_raise_error(self) -> None:
+        """
+        Test that non-numeric values in the multipliers list raise a validation error.
+        """
+        response = self.client.post(
+            self.create_url,
+            {"multipliers": [1.32, "invalid", 2.09]},
+            format="json",
+            HTTP_API_KEY=f"{self.worker.key}",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("multipliers", response.data)
+
+    def test_multipliers_field_missing_raises_error(self) -> None:
+        """
+        Test that a missing multipliers field raises a validation error.
+        """
+        response = self.client.post(
+            self.create_url,
+            {},
+            format="json",
+            HTTP_API_KEY=f"{self.worker.key}",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("multipliers", response.data)
 
 
 class MultiplierListViewTests(UserBaseAPITestCase):

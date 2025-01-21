@@ -24,7 +24,7 @@ spec:
         - containerPort: 5900
           name: chrome-browser
         env:
-        # Expose pod name as an environment variable
+        # Inject pod name as an environment variable
         - name: POD_NAME
           valueFrom:
             fieldRef:

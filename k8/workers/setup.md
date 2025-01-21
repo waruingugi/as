@@ -17,6 +17,7 @@ kubectl create secret generic chrome-secrets \
   --from-literal=pod-2-PASSWORD=<> \
   --from-literal=VNC_PASSWORD=<> \
   --from-literal=BASE_URL=<> \
+  --from-literal=APP_NAME=<> \
   --namespace=<>
 ```
 

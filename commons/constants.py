@@ -18,6 +18,10 @@ class BettingApps(str, Enum):
     def list():
         return [app.value for app in BettingApps]
 
+    @staticmethod
+    def choices():
+        return [(app.value, app.value) for app in BettingApps]
+
 
 class CacheKeys:
     """Central repository of cache keys."""
@@ -36,3 +40,7 @@ class SeedNames(str, Enum):
     @staticmethod
     def list():
         return [seed.value for seed in SeedNames]
+
+    @staticmethod
+    def choices():
+        return [(seed.value, seed.value) for seed in SeedNames]

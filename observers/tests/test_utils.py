@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from django.test import TestCase
 
-from commons.constants import BettingApps
+from commons.constants import BettingApps, SeedNames
 from commons.errors import ErrorCodes
 from observers.models import Multiplier
 from observers.utils import get_new_multipliers, parse_multipliers
@@ -76,7 +76,7 @@ class GetNewPayoutsTestCase(TestCase):
     def setUpTestData(cls) -> None:
         cls.multipliers_list = [1.21, 4.33, 1.18]
         cls.worker = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name="betika-node-001", key=uuid4()
+            app=BettingApps.BETIKA.value, name=SeedNames.list()[0], key=uuid4()
         )
 
     def test_new_multipliers_when_model_is_empty(self) -> None:

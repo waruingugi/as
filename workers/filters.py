@@ -6,7 +6,7 @@ from workers.models import Worker
 
 class WorkerFilter(FilterSet):
     # Filter for 'app' field using the BettingApps Enum
-    app = filters.ChoiceFilter(choices=[(app.value, app.value) for app in BettingApps])
+    app = filters.ChoiceFilter(choices=BettingApps.choices())
 
     class Meta:
         model = Worker

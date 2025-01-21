@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from commons.constants import BettingApps
+from commons.constants import BettingApps, SeedNames
 from commons.tests.test_base import UserBaseAPITestCase
 from observers.models import Multiplier
 from workers.models import Worker
@@ -15,7 +15,7 @@ class MultiplierCreateViewTests(APITestCase):
         self.client = APIClient()
         self.create_url = reverse("multipliers:create")
         self.worker = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name="betika-node-001", key=uuid4().hex
+            app=BettingApps.BETIKA.value, name=SeedNames.list()[0], key=uuid4().hex
         )
         self.data = {"multipliers": "1.32x, 1.41x, 2.09x, 3.12x"}
 
@@ -36,7 +36,7 @@ class MultiplierCreateViewTests(APITestCase):
 class MultiplierListViewTests(UserBaseAPITestCase):
     def setUp(self) -> None:
         self.worker = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name="betika-node-001", key=uuid4().hex
+            app=BettingApps.BETIKA.value, name=SeedNames.list()[0], key=uuid4().hex
         )
         self.multiplier_1 = Multiplier.objects.create(worker=self.worker, crash=1.51)
         self.multiplier_2 = Multiplier.objects.create(worker=self.worker, crash=2.55)

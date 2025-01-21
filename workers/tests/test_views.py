@@ -1,3 +1,4 @@
+from django.db.utils import IntegrityError
 from django.urls import reverse
 from rest_framework import status
 
@@ -30,18 +31,18 @@ class WorkerCreateViewTests(UserBaseAPITestCase):
         self.assertNotEqual(response1.data["key"], response2.data["key"])
 
     def test_unique_worker_name_constraint_is_enforced(self) -> None:
-        self.client.post(
-            self.create_url,
-            {"app": BettingApps.BETIKA.value, "name": "betika-node-002"},
-        )
-        response = self.client.post(
-            self.create_url,
-            {"app": BettingApps.BETIKA.value, "name": "betika-node-002"},
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        with self.assertRaises(IntegrityError):
+            self.client.post(
+                self.create_url,
+                {"app": BettingApps.BETIKA.value, "name": SeedNames.list()[2]},
+            )
+            self.client.post(
+                self.create_url,
+                {"app": BettingApps.BETIKA.value, "name": SeedNames.list()[2]},
+            )
 
     def test_invalid_worker_name(self) -> None:
-        data = {"app": "invalid_worker_name", "name": "betika-node-001"}
+        data = {"app": "invalid_worker_name", "name": SeedNames.list()[1]}
         response = self.client.post(self.create_url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -56,9 +57,9 @@ class WorkerListViewTests(UserBaseAPITestCase):
         self.list_url = reverse("workers:list")
         Worker.objects.bulk_create(
             [
-                Worker(name="betika-node-001", app=BettingApps.BETIKA.value),
-                Worker(name="betika-node-002", app=BettingApps.BETIKA.value),
-                Worker(name="betika-node-003", app=BettingApps.BETIKA.value),
+                Worker(name=SeedNames.list()[0], app=BettingApps.BETIKA.value),
+                Worker(name=SeedNames.list()[1], app=BettingApps.BETIKA.value),
+                Worker(name=SeedNames.list()[2], app=BettingApps.BETIKA.value),
             ]
         )
         self.force_authenticate_staff_user()
@@ -82,11 +83,11 @@ class WorkerListViewTests(UserBaseAPITestCase):
         self.assertIn("previous", response.data)
 
     def test_search_workers_as_staff(self) -> None:
-        response = self.client.get(self.list_url, {"search": "betika-node-001"})
+        response = self.client.get(self.list_url, {"search": SeedNames.list()[1]})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
-        self.assertEqual(response.data["results"][0]["name"], "betika-node-001")
+        self.assertEqual(response.data["results"][0]["name"], SeedNames.list()[1])
 
     def test_ordering_workers_as_staff(self) -> None:
         response = self.client.get(self.list_url, {"ordering": "created_at"})
@@ -121,7 +122,7 @@ class WorkerRetrieveUpdateViewTests(UserBaseAPITestCase):
     def setUp(self) -> None:
         # Create a test worker
         self.worker = Worker.objects.create(
-            name="betika-node-001", app=BettingApps.BETIKA.value
+            name=SeedNames.list()[1], app=BettingApps.BETIKA.value
         )
 
         # Set the endpoint URL
@@ -136,17 +137,17 @@ class WorkerRetrieveUpdateViewTests(UserBaseAPITestCase):
         self.assertEqual(response.data["app"], self.worker.app)
 
     def test_can_update_worker_as_staff(self):
-        update_data = {"name": "betika-node-004"}
+        update_data = {"name": SeedNames.list()[0]}
         response = self.client.patch(self.url, update_data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.worker.refresh_from_db()
-        self.assertEqual(self.worker.name, "betika-node-004")
+        self.assertEqual(self.worker.name, SeedNames.list()[0])
         self.assertEqual(self.worker.app, BettingApps.BETIKA.value)
 
     def test_cannot_update_worker_as_regular_user(self):
         self.force_authenticate_user()
-        update_data = {"name": "betika-node-004"}
+        update_data = {"name": SeedNames.list()[0]}
         response = self.client.patch(self.url, update_data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

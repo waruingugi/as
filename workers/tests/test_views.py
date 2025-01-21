@@ -1,7 +1,7 @@
 from django.urls import reverse
 from rest_framework import status
 
-from commons.constants import BettingApps
+from commons.constants import BettingApps, SeedNames
 from commons.tests.test_base import UserBaseAPITestCase
 from workers.models import Worker
 from workers.serializers import WorkerListSerializer
@@ -10,7 +10,7 @@ from workers.serializers import WorkerListSerializer
 class WorkerCreateViewTests(UserBaseAPITestCase):
     def setUp(self) -> None:
         self.create_url = reverse("workers:create")
-        self.data = {"app": BettingApps.BETIKA.value, "name": "betika-node-001"}
+        self.data = {"app": BettingApps.BETIKA.value, "name": SeedNames.list()[0]}
         self.force_authenticate_staff_user()
 
     def test_create_worker_successfully_as_staff(self) -> None:
@@ -21,11 +21,11 @@ class WorkerCreateViewTests(UserBaseAPITestCase):
     def test_unique_worker_key_constraint_is_enforced(self) -> None:
         response1 = self.client.post(
             self.create_url,
-            {"app": BettingApps.BETIKA.value, "name": "betika-node-002"},
+            {"app": BettingApps.BETIKA.value, "name": SeedNames.list()[0]},
         )
         response2 = self.client.post(
             self.create_url,
-            {"app": BettingApps.BETIKA.value, "name": "betika-node-003"},
+            {"app": BettingApps.BETIKA.value, "name": SeedNames.list()[1]},
         )
         self.assertNotEqual(response1.data["key"], response2.data["key"])
 

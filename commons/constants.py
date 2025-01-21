@@ -10,8 +10,29 @@ WORKER_API_KEY_LEN: int = 32
 
 
 class BettingApps(str, Enum):
+    """Apps tracked by the API"""
+
     BETIKA = "BETIKA"
+
+    @staticmethod
+    def list():
+        return [app.value for app in BettingApps]
 
 
 class CacheKeys:
+    """Central repository of cache keys."""
+
     WORKER_KEY = "worker_key:{}"
+    SEED_SELECTOR = "{}_seed_selector"
+
+
+class SeedNames(str, Enum):
+    """Seed name options."""
+
+    SEED_00 = "Seed 00"
+    SEED_01 = "Seed 01"
+    SEED_O2 = "Seed 02"
+
+    @staticmethod
+    def list():
+        return [seed.value for seed in SeedNames]

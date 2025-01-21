@@ -1,4 +1,5 @@
 asgiref==3.8.1
+async-timeout==5.0.1
 attrs==24.3.0
 cfgv==3.4.0
 distlib==0.3.9
@@ -27,6 +28,7 @@ PyJWT==2.10.1
 python-dotenv==1.0.1
 PyYAML==6.0.2
 random-username==1.0.2
+redis==5.2.1
 referencing==0.35.1
 rpds-py==0.22.3
 sqlparse==0.5.3

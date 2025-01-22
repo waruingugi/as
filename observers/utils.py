@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from observers.models import Multiplier
 
 # def parse_multipliers(input_string: str) -> list[float]:
@@ -37,3 +39,41 @@ def get_new_multipliers(
             return new_multipliers_list[:i]
 
     return new_multipliers_list
+
+
+def calculate_jaccard_similarity(set_1, set_2) -> float:
+    """
+    Calculate Jaccard similarity between two sets.
+    """
+    intersection = len(set_1 & set_2)
+    union = len(set_1 | set_2)
+    return intersection / union if union > 0 else 0
+
+
+def find_similar_workers(worker_payouts, threshold=0.8) -> dict:
+    """
+    Compare workers for similarity based on Jaccard similarity.
+
+    Args:
+        worker_payouts (dict): Dictionary of worker IDs and their payout sets.
+        threshold (float): Similarity threshold to consider workers as "similar".
+
+    Returns:
+        dict: Matched worker pairs and their similarity scores.
+    """
+    matched_workers = defaultdict(list)
+    worker_ids = list(worker_payouts.keys())
+
+    for i in range(len(worker_ids)):
+        for j in range(i + 1, len(worker_ids)):
+            worker_1 = worker_ids[i]
+            worker_2 = worker_ids[j]
+
+            # Calculate similarity
+            similarity = calculate_jaccard_similarity(
+                worker_payouts[worker_1], worker_payouts[worker_2]
+            )
+            if similarity >= threshold:
+                matched_workers[(worker_1, worker_2)] = similarity
+
+    return matched_workers

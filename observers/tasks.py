@@ -1,0 +1,66 @@
+import random
+from collections import defaultdict
+
+from celery import shared_task
+
+from commons.constants import BettingApps
+from commons.logger import logger
+from observers.models import Multiplier
+from observers.utils import find_similar_workers
+from workers.models import Worker
+
+
+def reboot_worker(worker_id):
+    """
+    Placeholder function for rebooting a worker. For now, it just logs the action.
+    """
+    logger.info(f"Rebooting worker {worker_id}")
+    pass  # Replace with actual Kubernetes reboot logic later
+
+
+@shared_task
+def identify_similar_workers(threshold=0.8):
+    """
+    Find workers posting similar payouts and reboot one randomly if necessary.
+    """
+    for app in BettingApps.list():
+        # Get workers for the current app
+        workers = Worker.objects.filter(app=app).values_list("id", flat=True)
+
+        # Fetch all multipliers for these workers in one query
+        multipliers = (
+            Multiplier.objects.filter(worker_id__in=workers)
+            .order_by("-created_at")
+            .values("worker_id", "crash")
+        )
+
+        # Organize multipliers into a dictionary of sets
+        worker_payouts = defaultdict(set)
+        for multiplier in multipliers:
+            worker_payouts[multiplier["worker_id"]].add(float(multiplier["crash"]))
+
+        # Find similar workers
+        matched_workers = find_similar_workers(worker_payouts, threshold)
+
+        # Handle matched workers
+        handled_workers = (
+            set()
+        )  # To avoid rebooting multiple workers from the same group
+
+        for pair, similarity in matched_workers.items():
+            worker_1, worker_2 = pair
+
+            # Randomly choose one worker to reboot
+            if worker_1 not in handled_workers and worker_2 not in handled_workers:
+                chosen_worker = random.choice([worker_1, worker_2])
+                reboot_worker(chosen_worker)
+
+                # Mark the workers as handled
+                handled_workers.add(worker_1)
+                handled_workers.add(worker_2)
+
+            logger.info(
+                f"Workers {worker_1} and {worker_2} (App: {app}) "
+                f"have similar payouts with similarity {similarity:.2f}. "
+                f"Rebooting worker {chosen_worker}."
+            )

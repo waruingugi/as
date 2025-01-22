@@ -6,7 +6,7 @@ from commons.constants import BettingApps, SeedNames
 from observers.models import Multiplier
 
 # from observers.utils import get_new_multipliers, parse_multipliers
-from observers.utils import get_new_multipliers
+from observers.utils import calculate_jaccard_similarity, get_new_multipliers
 from workers.models import Worker
 
 # class ParsePayoutsTestCase(TestCase):
@@ -101,3 +101,40 @@ class GetNewPayoutsTestCase(TestCase):
         )
 
         self.assertListEqual(new_multipliers_list, [5.67, 1.00, 1.21])
+
+
+class TestJaccardSimilarity(TestCase):
+    def test_identical_sets(self) -> None:
+        set_1 = {1, 2, 3}
+        set_2 = {1, 2, 3}
+        similarity = calculate_jaccard_similarity(set_1, set_2)
+        self.assertEqual(
+            similarity, 1.0, "Identical sets should have similarity of 1.0"
+        )
+
+    def test_completely_different_sets(self) -> None:
+        set_1 = {1, 2, 3}
+        set_2 = {4, 5, 6}
+        similarity = calculate_jaccard_similarity(set_1, set_2)
+        self.assertEqual(
+            similarity, 0.0, "Completely different sets should have similarity of 0.0"
+        )
+
+    def test_partially_overlapping_sets(self) -> None:
+        set_1 = {1, 2, 3}
+        set_2 = {2, 3, 4}
+        similarity = calculate_jaccard_similarity(set_1, set_2)
+        expected_similarity = 2 / 4  # Intersection: {2, 3}, Union: {1, 2, 3, 4}
+        self.assertAlmostEqual(similarity, expected_similarity, places=2)
+
+    def test_empty_sets(self) -> None:
+        set_1 = set()
+        set_2 = set()
+        similarity = calculate_jaccard_similarity(set_1, set_2)
+        self.assertEqual(similarity, 0.0, "Empty sets should have similarity of 0.0")
+
+    def test_one_empty_one_non_empty_set(self) -> None:
+        set_1 = {1, 2, 3}
+        set_2 = set()
+        similarity = calculate_jaccard_similarity(set_1, set_2)
+        self.assertEqual(similarity, 0.0, "One empty set should have similarity of 0.0")

@@ -2,6 +2,7 @@ import random
 from collections import defaultdict
 
 from celery import shared_task
+from django.utils.timezone import now, timedelta
 
 from commons.constants import BettingApps
 from commons.logger import logger
@@ -34,19 +35,53 @@ def identify_similar_workers(threshold=0.8) -> None:
         matched_workers = find_similar_workers(worker_payouts, threshold)
 
         # Handle matched workers
-        handled_workers = (
-            set()
-        )  # To avoid rebooting multiple workers from the same group
+        handled_workers = set()
 
-        for pair, similarity in matched_workers.items():
+        for pair, _ in matched_workers.items():
             worker_1, worker_2 = pair
 
             # Randomly choose one worker to reboot
             if worker_1 not in handled_workers and worker_2 not in handled_workers:
-                logger.info(f"Randomly choosing  {app} worker to reboot.")
+                logger.info(f"Randomly choosing a {app} worker to reboot.")
                 chosen_worker = random.choice([worker_1, worker_2])
+
+                # Reboot the worker if not recently rebooted
                 reboot_worker(chosen_worker)
 
                 # Mark the workers as handled
                 handled_workers.add(worker_1)
                 handled_workers.add(worker_2)
+
+
+@shared_task
+def find_failing_workers():
+    """
+    Check if any worker has been inactive (no crashes posted) for 5 minutes,
+    and reboot the worker if necessary.
+    """
+    logger.info("Checking for failed workers...")
+    try:
+        # Get the current time and the 5-minute threshold
+        five_minutes_ago = now() - timedelta(minutes=5)
+
+        # Fetch all workers
+        workers = Worker.objects.all()
+
+        for worker in workers:
+            # Check the most recent crash time for this worker
+            recent_crash = (
+                Multiplier.objects.filter(worker=worker)
+                .order_by("-created_at")
+                .values_list("created_at", flat=True)
+                .first()
+            )
+
+            if not recent_crash or recent_crash < five_minutes_ago:
+                # Worker has not posted any crash in the last 5 minutes
+                logger.info(
+                    f"Worker {worker.name} has been inactive since {recent_crash}. Rebooting..."
+                )
+                reboot_worker(worker.id)
+
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")

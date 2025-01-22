@@ -2,7 +2,9 @@ import os
 from collections import defaultdict
 
 import requests
+from django.core.cache import cache
 
+from commons.constants import CacheKeys
 from commons.logger import logger
 from observers.models import Multiplier
 from workers.models import Worker
@@ -92,7 +94,13 @@ def reboot_worker(worker_id) -> None:
     try:
         # Fetch the worker from the database
         worker = Worker.objects.get(id=worker_id)
-        logger.info(f"Rebooting {worker.name} for app {worker.app}")
+        if cache.get(CacheKeys.REBOOTED_WORKER.format(worker_id)):
+            logger.info(
+                f"Worker {worker.name} for {worker.app} was rebooted recently. Skipping..."
+            )
+            return
+
+        logger.info(f"Rebooting {worker.name} for {worker.app}")
 
         # Parse the worker name and app
         seed_number = worker.name.split(" ")[-1][-1]  # Extract the seed number

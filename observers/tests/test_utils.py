@@ -2,6 +2,8 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
+from django.core.cache import cache
+
 from commons.constants import BettingApps, SeedNames
 from observers.models import Multiplier
 from observers.utils import (
@@ -74,15 +76,16 @@ from workers.models import Worker
 
 
 class GetNewPayoutsTestCase(TestCase):
-    cleaned_payouts_string: list[float]
-    worker: Worker
-
     @classmethod
-    def setUpTestData(cls) -> None:
+    def setUpClass(cls) -> None:
         cls.multipliers_list = [1.21, 4.33, 1.18]
         cls.worker = Worker.objects.create(
             app=BettingApps.BETIKA.value, name=SeedNames.list()[0], key=uuid4()
         )
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        Worker.objects.all().delete()
 
     def test_new_multipliers_when_model_is_empty(self) -> None:
         """Test the func. returns all multipliers when the Multiplier model is empty"""
@@ -205,6 +208,10 @@ class TestFindSimilarWorkers(TestCase):
 
 
 class TestRebootWorker(TestCase):
+    def tearDown(self):
+        # Clear the cache after each test
+        cache.clear()
+
     @patch("observers.utils.Worker.objects.get")
     @patch("observers.utils.requests.delete")
     @patch("observers.utils.os.getenv")

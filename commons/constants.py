@@ -28,6 +28,7 @@ class CacheKeys:
 
     WORKER_KEY = "worker_key:{}"
     SEED_SELECTOR = "{}_seed_selector"
+    REBOOTED_WORKER = "rebooted_worker:{}"
 
 
 class SeedNames(str, Enum):

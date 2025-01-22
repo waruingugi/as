@@ -1,7 +1,7 @@
-from django.urls import include, path
+# from django.urls import include, path
 
-from orchestrator.routes import orchestrator
+# from orchestrator.routes import orchestrator
 
-urlpatterns = [
-    path("orchestrator/", include((orchestrator.urlpatterns, "orchestrator")))
-]
+# urlpatterns = [
+#     path("orchestrator/", include((orchestrator.urlpatterns, "orchestrator")))
+# ]

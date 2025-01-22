@@ -7,7 +7,7 @@ from django.utils.timezone import now, timedelta
 from commons.constants import BettingApps
 from commons.logger import logger
 from observers.models import Multiplier
-from observers.utils import find_similar_workers, reboot_worker
+from orchestrator.utils import find_similar_workers, reboot_worker
 from workers.models import Worker
 
 
@@ -56,7 +56,7 @@ def identify_similar_workers(threshold=0.8) -> None:
 @shared_task
 def find_failing_workers():
     """
-    Check if any worker has been inactive (no crashes posted) for 5 minutes,
+    Check if any worker is stale (worker is not posting payouts) for 5 minutes,
     and reboot the worker if necessary.
     """
     logger.info("Checking for failed workers...")

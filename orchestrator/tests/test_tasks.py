@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from django.utils.timezone import now, timedelta
 
-from observers.tasks import find_failing_workers, identify_similar_workers
+from orchestrator.tasks import find_failing_workers, identify_similar_workers
 
 
 class TestIdentifySimilarWorkersTask(TestCase):

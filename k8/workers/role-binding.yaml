@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pod-restart-binding
+subjects:
+  - kind: ServiceAccount
+    name: pod-restart-sa
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: pod-restart-role
+  apiGroup: rbac.authorization.k8s.io

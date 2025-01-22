@@ -41,6 +41,39 @@ export NAMESPACE=<namespace-name>
 envsubst < service-template.yaml | kubectl apply -f -
 envsubst < statefulset-template.yaml | kubectl apply -f -
 ```
+# Setting up RBAC for the  API
+The API needs to be able to reboot roles.
+Below are the steps and commands to enable this:
+1. Create the service account
+2. Create the cluster role
+3. Create the role binding
+
+```
+kubectl apply -f service-account.yaml
+kubectl apply -f cluster-role.yaml
+kubectl apply -f role-binding.yaml
+```
+
+4. Verify permissions with the `kubectl auth can-i` command. All responses should be `yes`:
+```
+kubectl auth can-i delete pods --as=system:serviceaccount:default:pod-restart-sa
+kubectl auth can-i delete pods --all-namespaces --as=system:serviceaccount:default:pod-restart-sa
+```
+
+5. Create the token secret by running:
+```
+kubectl apply -f token.yaml
+```
+
+6. Once the secret is created, use the following command to get the base64 decoded token. It will be used as a bearer token in the API call.
+```
+kubectl -n default get secret pod-restart-token -o jsonpath="{.data.token}" | base64 --decode
+```
+
+7. Get the cluster endpoint to validate the API access.
+```
+kubectl get endpoints | grep kubernetes
+```
 
 # Handy commands
 - Get resource usage of pods:

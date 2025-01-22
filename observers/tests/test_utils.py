@@ -241,6 +241,7 @@ class TestRebootWorker(TestCase):
             headers={"Authorization": "Bearer mock_token"},
             verify=False,
         )
+        self.assertIsNone(cache.get("rebooted_worker:1"))
 
     @patch("observers.utils.Worker.objects.get")
     @patch("observers.utils.requests.delete")
@@ -271,3 +272,39 @@ class TestRebootWorker(TestCase):
             headers={"Authorization": "Bearer mock_token"},
             verify=False,
         )
+
+    @patch("observers.utils.Worker.objects.get")
+    def test_worker_already_rebooted(self, mock_get) -> None:
+        # Mock worker object
+        worker_mock = MagicMock()
+        worker_mock.name = "Seed 02"
+        worker_mock.app = "Betika"
+        mock_get.return_value = worker_mock
+
+        # Add worker to cache as already rebooted
+        cache.set("rebooted_worker:3", "1", timeout=600)
+
+        # Call the function
+        reboot_worker(worker_id=3)
+
+        # Assertions
+        mock_get.assert_called_once_with(id=3)
+
+    @patch("observers.utils.Worker.objects.get")
+    @patch("observers.utils.os.getenv")
+    def test_missing_environment_variables(self, mock_getenv, mock_get) -> None:
+        # Mock environment variables as missing
+        mock_getenv.side_effect = lambda key: None
+
+        # Mock worker object
+        worker_mock = MagicMock()
+        worker_mock.name = "Seed 03"
+        worker_mock.app = "Betika"
+        mock_get.return_value = worker_mock
+
+        # Call the function
+        reboot_worker(worker_id=4)
+
+        # Assertions
+        self.assertIsNone(mock_getenv("KUBERNETES_API_BASE_URL"))
+        self.assertIsNone(mock_getenv("KUBERNETES_TOKEN"))

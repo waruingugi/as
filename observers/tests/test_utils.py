@@ -4,10 +4,14 @@ from django.test import TestCase
 
 from commons.constants import BettingApps, SeedNames
 from observers.models import Multiplier
+from observers.utils import (
+    calculate_jaccard_similarity,
+    find_similar_workers,
+    get_new_multipliers,
+)
+from workers.models import Worker
 
 # from observers.utils import get_new_multipliers, parse_multipliers
-from observers.utils import calculate_jaccard_similarity, get_new_multipliers
-from workers.models import Worker
 
 # class ParsePayoutsTestCase(TestCase):
 #     def test_valid_input(self):
@@ -138,3 +142,62 @@ class TestJaccardSimilarity(TestCase):
         set_2 = set()
         similarity = calculate_jaccard_similarity(set_1, set_2)
         self.assertEqual(similarity, 0.0, "One empty set should have similarity of 0.0")
+
+
+class TestFindSimilarWorkers(TestCase):
+    def test_no_workers(self):
+        worker_payouts = {}
+        matched_workers = find_similar_workers(worker_payouts)
+        self.assertEqual(
+            matched_workers, {}, "No workers should return an empty result."
+        )
+
+    def test_no_similarity(self) -> None:
+        worker_payouts = {
+            1: {1, 2, 3},
+            2: {4, 5, 6},
+            3: {7, 8, 9},
+        }
+        matched_workers = find_similar_workers(worker_payouts)
+        self.assertEqual(
+            matched_workers, {}, "Workers with no overlap should not be matched."
+        )
+
+    def test_exact_similarity(self) -> None:
+        worker_payouts = {
+            1: {1, 2, 3},
+            2: {1, 2, 3},
+            3: {4, 5, 6},
+        }
+        matched_workers = find_similar_workers(worker_payouts)
+        self.assertEqual(
+            matched_workers,
+            {(1, 2): 1.0},
+            "Workers with identical sets should be matched with similarity 1.0.",
+        )
+
+    def test_partial_similarity(self) -> None:
+        worker_payouts = {
+            1: {1, 2, 3},
+            2: {2, 3, 4},
+            3: {5, 6, 7},
+        }
+        matched_workers = find_similar_workers(worker_payouts, threshold=0.5)
+        self.assertEqual(
+            matched_workers,
+            {(1, 2): 0.5},
+            "Workers with partial overlap should be matched if above the threshold.",
+        )
+
+    def test_custom_threshold(self) -> None:
+        worker_payouts = {
+            1: {1, 2, 3},
+            2: {2, 3, 4},
+            3: {5, 6, 7},
+        }
+        matched_workers = find_similar_workers(worker_payouts, threshold=0.6)
+        self.assertEqual(
+            matched_workers,
+            {},
+            "With a threshold of 0.6, partially overlapping workers should not be matched.",
+        )

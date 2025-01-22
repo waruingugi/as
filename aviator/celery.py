@@ -9,9 +9,7 @@ from django.conf import settings
 # Set the default Django settings module for the 'celery' program
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "aviator.settings")
 
-app = Celery(
-    __name__, timezone="Africa/Nairobi", broker_connection_retry_on_startup=True
-)
+app = Celery(__name__, broker_connection_retry_on_startup=False)
 
 # Configure Celery using settings from Django settings.py
 app.config_from_object("django.conf:settings", namespace="CELERY")
@@ -24,7 +22,7 @@ app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 app.conf.beat_schedule = {
     "identify_similar_workers": {
         # Task name which we have created in quiz.tasks
-        "task": "identify_similar_workers",
+        "task": "observers.tasks.identify_similar_workers",
         # Run every 3 minutes
         "schedule": crontab(minute="*/3"),
     },

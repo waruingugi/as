@@ -21,7 +21,7 @@ app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 # Period tasks in the system
 app.conf.beat_schedule = {
     "identify_similar_workers_task": {
-        "task": "observers.tasks.identify_similar_workers",
+        "task": "orchestrator.tasks.identify_similar_workers",
         "schedule": crontab(minute="*/3"),
     },
     "find_failing_workers_task": {

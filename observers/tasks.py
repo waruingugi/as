@@ -10,7 +10,7 @@ from observers.utils import find_similar_workers
 from workers.models import Worker
 
 
-def reboot_worker(worker_id):
+def reboot_worker(worker_id) -> None:
     """
     Placeholder function for rebooting a worker. For now, it just logs the action.
     """
@@ -19,7 +19,7 @@ def reboot_worker(worker_id):
 
 
 @shared_task
-def identify_similar_workers(threshold=0.8):
+def identify_similar_workers(threshold=0.8) -> None:
     """
     Find workers posting similar payouts and reboot one randomly if necessary.
     """
@@ -27,17 +27,15 @@ def identify_similar_workers(threshold=0.8):
         # Get workers for the current app
         workers = Worker.objects.filter(app=app).values_list("id", flat=True)
 
-        # Fetch all multipliers for these workers in one query
-        multipliers = (
-            Multiplier.objects.filter(worker_id__in=workers)
-            .order_by("-created_at")
-            .values("worker_id", "crash")
-        )
-
         # Organize multipliers into a dictionary of sets
         worker_payouts = defaultdict(set)
-        for multiplier in multipliers:
-            worker_payouts[multiplier["worker_id"]].add(float(multiplier["crash"]))
+        for worker in workers:
+            recent_payouts = (
+                Multiplier.objects.filter(worker_id=worker)
+                .order_by("-created_at")
+                .values_list("crash", flat=True)[:10]
+            )
+            worker_payouts[worker].update(recent_payouts)
 
         # Find similar workers
         matched_workers = find_similar_workers(worker_payouts, threshold)

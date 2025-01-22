@@ -8,11 +8,11 @@ from orchestrator.tasks import find_failing_workers, identify_similar_workers
 
 
 class TestIdentifySimilarWorkersTask(TestCase):
-    @patch("observers.tasks.Worker.objects.filter")
-    @patch("observers.tasks.Multiplier.objects.filter")
-    @patch("observers.tasks.find_similar_workers")
-    @patch("observers.tasks.reboot_worker")
-    def test_limited_recent_payouts(
+    @patch("orchestrator.tasks.Worker.objects.filter")
+    @patch("orchestrator.tasks.Multiplier.objects.filter")
+    @patch("orchestrator.tasks.find_similar_workers")
+    @patch("orchestrator.tasks.reboot_worker")
+    def test_reboot_similar_workers_successfully(
         self,
         mock_reboot_worker,
         mock_find_similar,
@@ -51,9 +51,9 @@ class TestIdentifySimilarWorkersTask(TestCase):
 
 
 class TestFindFailingWorkers(TestCase):
-    @patch("observers.tasks.Worker.objects.all")
-    @patch("observers.tasks.Multiplier.objects.filter")
-    @patch("observers.tasks.reboot_worker")
+    @patch("orchestrator.tasks.Worker.objects.all")
+    @patch("orchestrator.tasks.Multiplier.objects.filter")
+    @patch("orchestrator.tasks.reboot_worker")
     def test_all_workers_are_active(
         self, mock_reboot_worker, mock_multiplier_filter, mock_worker_all
     ) -> None:
@@ -77,9 +77,9 @@ class TestFindFailingWorkers(TestCase):
         # Assertions
         mock_reboot_worker.assert_not_called()
 
-    @patch("observers.tasks.Worker.objects.all")
-    @patch("observers.tasks.Multiplier.objects.filter")
-    @patch("observers.tasks.reboot_worker")
+    @patch("orchestrator.tasks.Worker.objects.all")
+    @patch("orchestrator.tasks.Multiplier.objects.filter")
+    @patch("orchestrator.tasks.reboot_worker")
     def test_some_workers_are_failing(
         self, mock_reboot_worker, mock_multiplier_filter, mock_worker_all
     ) -> None:

@@ -111,9 +111,9 @@ class TestRebootWorker(TestCase):
         # Clear the cache after each test
         cache.clear()
 
-    @patch("observers.utils.Worker.objects.get")
-    @patch("observers.utils.requests.delete")
-    @patch("observers.utils.os.getenv")
+    @patch("orchestrator.utils.Worker.objects.get")
+    @patch("orchestrator.utils.requests.delete")
+    @patch("orchestrator.utils.os.getenv")
     def test_successful_pod_reboot(self, mock_getenv, mock_delete, mock_get) -> None:
         # Mock environment variables
         mock_getenv.side_effect = lambda key: {
@@ -142,9 +142,9 @@ class TestRebootWorker(TestCase):
         )
         self.assertIsNone(cache.get("rebooted_worker:1"))
 
-    @patch("observers.utils.Worker.objects.get")
-    @patch("observers.utils.requests.delete")
-    @patch("observers.utils.os.getenv")
+    @patch("orchestrator.utils.Worker.objects.get")
+    @patch("orchestrator.utils.requests.delete")
+    @patch("orchestrator.utils.os.getenv")
     def test_failed_api_request(self, mock_getenv, mock_delete, mock_get) -> None:
         # Mock environment variables
         mock_getenv.side_effect = lambda key: {
@@ -172,7 +172,7 @@ class TestRebootWorker(TestCase):
             verify=False,
         )
 
-    @patch("observers.utils.Worker.objects.get")
+    @patch("orchestrator.utils.Worker.objects.get")
     def test_worker_already_rebooted(self, mock_get) -> None:
         # Mock worker object
         worker_mock = MagicMock()
@@ -189,8 +189,8 @@ class TestRebootWorker(TestCase):
         # Assertions
         mock_get.assert_called_once_with(id=3)
 
-    @patch("observers.utils.Worker.objects.get")
-    @patch("observers.utils.os.getenv")
+    @patch("orchestrator.utils.Worker.objects.get")
+    @patch("orchestrator.utils.os.getenv")
     def test_missing_environment_variables(self, mock_getenv, mock_get) -> None:
         # Mock environment variables as missing
         mock_getenv.side_effect = lambda key: None

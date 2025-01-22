@@ -25,7 +25,7 @@ app.conf.beat_schedule = {
         "schedule": crontab(minute="*/3"),
     },
     "find_failing_workers_task": {
-        "task": "observers.tasks.find_failing_workers",
+        "task": "orchestrator.tasks.find_failing_workers",
         "schedule": crontab(minute="*/5"),
     },
 }

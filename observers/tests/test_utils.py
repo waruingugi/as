@@ -1,6 +1,6 @@
+from unittest import TestCase
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
-
-from django.test import TestCase
 
 from commons.constants import BettingApps, SeedNames
 from observers.models import Multiplier
@@ -8,6 +8,7 @@ from observers.utils import (
     calculate_jaccard_similarity,
     find_similar_workers,
     get_new_multipliers,
+    reboot_worker,
 )
 from workers.models import Worker
 
@@ -200,4 +201,66 @@ class TestFindSimilarWorkers(TestCase):
             matched_workers,
             {},
             "With a threshold of 0.6, partially overlapping workers should not be matched.",
+        )
+
+
+class TestRebootWorker(TestCase):
+    @patch("observers.utils.Worker.objects.get")
+    @patch("observers.utils.requests.delete")
+    @patch("observers.utils.os.getenv")
+    def test_successful_pod_reboot(self, mock_getenv, mock_delete, mock_get) -> None:
+        # Mock environment variables
+        mock_getenv.side_effect = lambda key: {
+            "KUBERNETES_API_BASE_URL": "https://63.150.79.21:443",
+            "KUBERNETES_TOKEN": "mock_token",
+        }.get(key)
+
+        # Mock worker object
+        worker_mock = MagicMock()
+        worker_mock.name = "Seed 00"
+        worker_mock.app = "Betika"
+        mock_get.return_value = worker_mock
+
+        # Mock successful DELETE request
+        mock_delete.return_value.status_code = 200
+
+        # Call the function
+        reboot_worker(worker_id=1)
+
+        # Assertions
+        mock_get.assert_called_once_with(id=1)
+        mock_delete.assert_called_once_with(
+            "https://63.150.79.21:443/api/v1/namespaces/betika/pods/betika-seed-0",
+            headers={"Authorization": "Bearer mock_token"},
+            verify=False,
+        )
+
+    @patch("observers.utils.Worker.objects.get")
+    @patch("observers.utils.requests.delete")
+    @patch("observers.utils.os.getenv")
+    def test_failed_api_request(self, mock_getenv, mock_delete, mock_get) -> None:
+        # Mock environment variables
+        mock_getenv.side_effect = lambda key: {
+            "KUBERNETES_API_BASE_URL": "https://63.150.79.21:443",
+            "KUBERNETES_TOKEN": "mock_token",
+        }.get(key)
+
+        # Mock worker object
+        worker_mock = MagicMock()
+        worker_mock.name = "Seed 01"
+        worker_mock.app = "Betika"
+        mock_get.return_value = worker_mock
+
+        # Mock failed DELETE request
+        mock_delete.return_value.status_code = 500
+        mock_delete.return_value.text = "Internal Server Error"
+
+        # Call the function
+        reboot_worker(worker_id=2)
+
+        # Assertions
+        mock_delete.assert_called_once_with(
+            "https://63.150.79.21:443/api/v1/namespaces/betika/pods/betika-seed-1",
+            headers={"Authorization": "Bearer mock_token"},
+            verify=False,
         )

@@ -1,6 +1,11 @@
+import os
 from collections import defaultdict
 
+import requests
+
+from commons.logger import logger
 from observers.models import Multiplier
+from workers.models import Worker
 
 # def parse_multipliers(input_string: str) -> list[float]:
 #     if not input_string or not isinstance(input_string, str):
@@ -61,6 +66,7 @@ def find_similar_workers(worker_payouts, threshold=0.8) -> dict:
     Returns:
         dict: Matched worker pairs and their similarity scores.
     """
+    logger.info("Finding workers with similar payouts...")
     matched_workers = defaultdict(list)
     worker_ids = list(worker_payouts.keys())
 
@@ -77,3 +83,44 @@ def find_similar_workers(worker_payouts, threshold=0.8) -> dict:
                 matched_workers[(worker_1, worker_2)] = similarity
 
     return matched_workers
+
+
+def reboot_worker(worker_id) -> None:
+    """
+    Reboot a worker pod by shutting it down in the Kubernetes cluster.
+    """
+    try:
+        # Fetch the worker from the database
+        worker = Worker.objects.get(id=worker_id)
+        logger.info(f"Rebooting {worker.name} for app {worker.app}")
+
+        # Parse the worker name and app
+        seed_number = worker.name.split(" ")[-1][-1]  # Extract the seed number
+        app_name = worker.app.lower()  # Convert app name to lowercase
+
+        # Construct the pod name
+        pod_name = f"{app_name}-seed-{seed_number}"
+
+        # Fetch Kubernetes API base URL and token from environment variables
+        kubernetes_base_url = os.getenv("KUBERNETES_API_BASE_URL")
+        kubernetes_token = os.getenv("KUBERNETES_TOKEN")
+
+        # Construct the request URL
+        url = f"{kubernetes_base_url}/api/v1/namespaces/{app_name}/pods/{pod_name}"
+
+        # Set up headers
+        headers = {"Authorization": f"Bearer {kubernetes_token}"}
+
+        # Send the DELETE request to shut down the pod
+        response = requests.delete(url, headers=headers, verify=False)
+
+        if response.status_code == 200:
+            logger.info(f"Successfully rebooted worker pod: {pod_name}")
+        else:
+            logger.error(
+                f"Failed to reboot worker pod: {pod_name}. "
+                f"Status code: {response.status_code}, Response: {response.text}"
+            )
+
+    except Exception as e:
+        logger.error(f"An error occurred while rebooting the worker: {str(e)}")

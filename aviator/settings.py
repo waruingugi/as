@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "users",
     "workers",
     "orchestrator",
+    "analytics",
 ]
 
 MIDDLEWARE = [

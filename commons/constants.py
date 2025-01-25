@@ -29,6 +29,7 @@ class CacheKeys:
     WORKER_KEY = "worker_key:{}"
     SEED_SELECTOR = "{}_seed_selector"
     REBOOTED_WORKER = "rebooted_worker:{}"
+    CRASH_INTERVALS = "{}x_crash_intervals"  # Derived from CrashesToMonitor constant
 
 
 class SeedNames(str, Enum):

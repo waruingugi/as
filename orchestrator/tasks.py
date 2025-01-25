@@ -59,7 +59,7 @@ def find_failing_workers():
     Check if any worker is stale (worker is not posting payouts) for 5 minutes,
     and reboot the worker if necessary.
     """
-    logger.info("Checking for failed workers...")
+    logger.info("Starting task to check for failed workers...")
     try:
         # Get the current time and the 5-minute threshold
         five_minutes_ago = now() - timedelta(minutes=5)

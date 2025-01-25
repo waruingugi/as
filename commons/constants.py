@@ -9,6 +9,10 @@ User = get_user_model()
 WORKER_API_KEY_LEN: int = 32
 
 
+# Default cache duration
+DEFAULT_CACHE_DURATION: int = 300  # 5 minutes
+
+
 class BettingApps(str, Enum):
     """Apps tracked by the API"""
 
@@ -27,9 +31,10 @@ class CacheKeys:
     """Central repository of cache keys."""
 
     WORKER_KEY = "worker_key:{}"
-    SEED_SELECTOR = "{}_seed_selector"
     REBOOTED_WORKER = "rebooted_worker:{}"
-    CRASH_INTERVALS = "{}x_crash_intervals"  # Derived from CrashesToMonitor constant
+    WORKER_COUNT_SINCE_CRASH = "workey_id:{}:count_since:{}x"
+    WORKER_ID_CRASH_QUERY = "worker_id:{}:over{}x_query"
+    WORKER_ID_CRASH_INTERVALS = "worker_id:{}:over_{}x_intervals"
 
 
 class SeedNames(str, Enum):

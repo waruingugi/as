@@ -10,3 +10,6 @@ class CrashesToMonitor(float, Enum):
     @staticmethod
     def list():
         return [crash.value for crash in CrashesToMonitor]
+
+
+PROB_DEFAULT_CACHE_DURATION: int = 3600

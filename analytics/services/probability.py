@@ -72,7 +72,7 @@ class Probability(Analytics):
             if len(crashes) < 2:
                 return SortedList()
             return SortedList(
-                (crashes[i] - crashes[i - 1]).total_seconds()
+                round((crashes[i] - crashes[i - 1]).total_seconds())
                 for i in range(1, len(crashes))
             )
 
@@ -87,7 +87,7 @@ class Probability(Analytics):
         count = Probability.time_since_last_crash(worker_id, crash)
         intervals = Probability.get_intervals_from_cache(worker_id, crash)
 
-        if count == float("inf"):
+        if count == float("inf") or len(intervals) == 0:
             logger.info(
                 f"No qualifying crash found. Returning 0 probability for worker_id={worker_id}, crash={crash}."
             )

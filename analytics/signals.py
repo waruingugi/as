@@ -1,7 +1,8 @@
 from django.dispatch import receiver
 
 from analytics.constants import CrashesToMonitor
-from analytics.utils import cache_crash_intervals
+
+# from analytics.utils import cache_crash_intervals
 from observers.models import Multiplier, post_bulk_create
 
 
@@ -13,4 +14,5 @@ def new_crash_created(sender, instances, **kwargs):
         for instance in instances
         for crash in CrashesToMonitor.list()
     ):
-        cache_crash_intervals()
+        # cache_crash_intervals()
+        pass

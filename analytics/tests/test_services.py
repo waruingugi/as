@@ -4,6 +4,7 @@ from unittest.mock import patch
 from django.core.cache import cache
 from django.test import TestCase
 from django.utils.timezone import now
+from sortedcontainers import SortedList
 
 from analytics.constants import CrashesToMonitor
 from analytics.services.probability import Probability
@@ -59,3 +60,138 @@ class TestProbability(TestCase):
         mock_filter.assert_called_once()
         mock_cache_set.assert_called_once()  # Ensure fallback result was cached
         self.assertEqual(len(crashes), 3)
+
+    # Black will ignore this line
+    # fmt: off
+    @patch("analytics.services.probability.Multiplier.objects.filter")
+    def test_time_since_last_crash(self, mock_filter) -> None:
+        """Test calculating time since the last crash without cache."""
+        mock_filter.return_value.order_by.return_value.values_list.return_value.first.return_value = None  # noqa
+
+        seconds = Probability.time_since_last_crash(
+            self.worker_id,
+            self.crash_threshold,
+        )
+        mock_filter.assert_called_once_with(
+            worker__id=self.worker_id,
+            crash__gte=self.crash_threshold,
+        )
+        self.assertEqual(seconds, float("inf"))
+
+        # Mock a crash 1 hour ago
+        mock_filter.reset_mock()  # Reset the mock for a new test case
+        mock_filter.return_value.order_by.return_value.values_list.return_value.first.return_value = (
+            now() - timedelta(hours=1)
+        )  # noqa
+
+        seconds = Probability.time_since_last_crash(
+            self.worker_id,
+            self.crash_threshold,
+        )
+        mock_filter.assert_called_once_with(
+            worker__id=self.worker_id,
+            crash__gte=self.crash_threshold,
+        )
+
+        self.assertTrue(0 < round(seconds) <= 3600)
+    # fmt: on
+
+    @patch("analytics.services.base.cache.get")
+    @patch("analytics.services.probability.Probability.fetch_gte_crashes")
+    @patch("analytics.services.base.cache.set")
+    def test_get_intervals_from_cache(
+        self,
+        mock_cache_set,
+        mock_fetch_gte_crashes,
+        mock_cache_get,
+    ) -> None:
+        """Test fetching or calculating intervals from cache."""
+        # Mock cache hit
+        mock_cache_get.return_value = SortedList([100.0, 200.0, 300.0])
+
+        intervals = Probability.get_intervals_from_cache(
+            self.worker_id,
+            self.crash_threshold,
+        )
+        mock_cache_get.assert_called_once()
+        self.assertEqual(intervals, SortedList([100.0, 200.0, 300.0]))
+
+        # Mock cache miss
+        mock_cache_get.reset_mock()
+        mock_cache_get.return_value = None  # Simulate cache miss
+        mock_fetch_gte_crashes.return_value = [
+            now() - timedelta(seconds=300),
+            now() - timedelta(seconds=200),
+            now() - timedelta(seconds=100),
+            now(),
+        ]
+
+        intervals = Probability.get_intervals_from_cache(
+            self.worker_id,
+            self.crash_threshold,
+        )
+        mock_fetch_gte_crashes.assert_called_once_with(
+            self.worker_id,
+            self.crash_threshold,
+        )
+        mock_cache_set.assert_called_once()  # Ensure fallback result was cached
+        self.assertEqual(
+            intervals,
+            SortedList([100, 100, 100]),
+        )  # Rounded to full seconds
+
+    @patch("analytics.services.probability.Probability.time_since_last_crash")
+    @patch("analytics.services.probability.Probability.get_intervals_from_cache")
+    def test_calculate_probability(
+        self,
+        mock_get_intervals,
+        mock_time_since_last_crash,
+    ) -> None:
+        """Test calculating probability based on crashes and intervals."""
+        # Mock data
+        mock_time_since_last_crash.return_value = 150
+        mock_get_intervals.return_value = SortedList([100, 200, 300])  # Full seconds
+
+        probability = Probability.calculate_probability(
+            self.worker_id,
+            self.crash_threshold,
+        )
+        mock_time_since_last_crash.assert_called_once()
+        mock_get_intervals.assert_called_once()
+        self.assertEqual(probability, 33.33)
+
+        # Test no intervals
+        mock_get_intervals.return_value = SortedList()
+
+        probability = Probability.calculate_probability(
+            self.worker_id,
+            self.crash_threshold,
+        )
+        self.assertEqual(probability, 0.0)
+
+        # Test no crashes meeting the threshold
+        mock_time_since_last_crash.return_value = float("inf")
+
+        probability = Probability.calculate_probability(
+            self.worker_id,
+            self.crash_threshold,
+        )
+        self.assertEqual(probability, 0.0)
+
+    @patch(
+        "analytics.services.probability.Probability.purge_crash_intervals_cache_for_worker",
+    )
+    def test_purge_crash_intervals_cache_for_worker(self, mock_purge_cache) -> None:
+        """Test purging crash intervals cache for a specific worker."""
+        Probability.purge_crash_intervals_cache_for_worker(self.worker_id)
+
+        mock_purge_cache.assert_called_once_with(self.worker_id)
+
+    @patch(
+        "analytics.services.probability.Probability.purge_crash_query_cache_for_worker",
+    )
+    def test_purge_crash_query_cache_for_worker(self, mock_purge_cache) -> None:
+        """Test purging crash query cache for a specific worker."""
+        Probability.purge_crash_query_cache_for_worker(self.worker_id)
+
+        mock_purge_cache.assert_called_once_with(self.worker_id)

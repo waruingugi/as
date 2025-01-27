@@ -61,39 +61,61 @@ class TestProbability(TestCase):
         mock_cache_set.assert_called_once()  # Ensure fallback result was cached
         self.assertEqual(len(crashes), 3)
 
-    # Black will ignore this line
+    # Black will ignore this function
     # fmt: off
+    @patch("analytics.services.base.cache.get")
     @patch("analytics.services.probability.Multiplier.objects.filter")
-    def test_time_since_last_crash(self, mock_filter) -> None:
-        """Test calculating time since the last crash without cache."""
-        mock_filter.return_value.order_by.return_value.values_list.return_value.first.return_value = None  # noqa
+    @patch("analytics.services.base.cache.set")
+    def test_time_since_last_crash(
+        self, mock_cache_set, mock_filter, mock_cache_get
+    ) -> None:
+        """Test calculating time since the last crash with and without recompute."""
 
+        # Test cache hit
+        mock_cache_get.return_value = 3600.0
         seconds = Probability.time_since_last_crash(
-            self.worker_id,
-            self.crash_threshold,
+            self.worker_id, self.crash_threshold
         )
-        mock_filter.assert_called_once_with(
-            worker__id=self.worker_id,
-            crash__gte=self.crash_threshold,
-        )
-        self.assertEqual(seconds, float("inf"))
+        mock_cache_get.assert_called_once()
+        self.assertEqual(seconds, 3600.0)
 
-        # Mock a crash 1 hour ago
-        mock_filter.reset_mock()  # Reset the mock for a new test case
+        # Test cache miss with recompute=False
+        mock_cache_get.reset_mock()
+        mock_cache_get.return_value = None
         mock_filter.return_value.order_by.return_value.values_list.return_value.first.return_value = (
             now() - timedelta(hours=1)
-        )  # noqa
+        )
 
         seconds = Probability.time_since_last_crash(
-            self.worker_id,
-            self.crash_threshold,
+            self.worker_id, self.crash_threshold
         )
+        mock_cache_get.assert_called_once()
         mock_filter.assert_called_once_with(
             worker__id=self.worker_id,
             crash__gte=self.crash_threshold,
         )
-
+        mock_cache_set.assert_called_once()  # Ensure recomputed value was cached
         self.assertTrue(0 < round(seconds) <= 3600)
+
+        # Test recompute=True
+        mock_cache_get.reset_mock()
+        mock_filter.reset_mock()
+        mock_cache_set.reset_mock()
+
+        mock_filter.return_value.order_by.return_value.values_list.return_value.first.return_value = (
+            now() - timedelta(hours=2)
+        )
+
+        seconds = Probability.time_since_last_crash(
+            self.worker_id, self.crash_threshold, recompute=True
+        )
+        mock_cache_get.assert_not_called()  # Cache is bypassed
+        mock_filter.assert_called_once_with(
+            worker__id=self.worker_id,
+            crash__gte=self.crash_threshold,
+        )
+        mock_cache_set.assert_called_once()  # Ensure recomputed value was cached
+        self.assertTrue(0 < round(seconds) <= 7200)
     # fmt: on
 
     @patch("analytics.services.base.cache.get")

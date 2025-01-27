@@ -32,9 +32,9 @@ class CacheKeys:
 
     WORKER_KEY = "worker_key:{}"
     REBOOTED_WORKER = "rebooted_worker:{}"
-    WORKER_COUNT_SINCE_CRASH = "workey_id:{}:count_since:{}x"
-    WORKER_ID_CRASH_QUERY = "worker_id:{}:over{}x_query"
-    WORKER_ID_CRASH_INTERVALS = "worker_id:{}:over_{}x_intervals"
+    WORKER_ID_CRASH_QUERY = "worker_id:{}:over{}x:query"
+    WORKER_ID_CRASH_INTERVALS = "worker_id:{}:over{}x:intervals"
+    WORKER_ID_LAST_CRASH_TIME = "worker_id:{}:time_since:{}x:"
 
 
 class SeedNames(str, Enum):

@@ -66,10 +66,25 @@ class Probability(Analytics):
         )
 
     @staticmethod
-    def time_since_last_crash(worker_id: str, crash: float) -> float:
-        """Fetch the time (in seconds) since the last crash meeting or exceeding the threshold.
-        This function should not be cached. We need the accurate time always
+    def time_since_last_crash(
+        worker_id: str, crash: float, recompute: bool = False
+    ) -> float:
         """
+        Fetch or compute the time (in seconds) since the last crash meeting or exceeding the threshold.
+
+        - If `recompute` is True (e.g., when called by a Django signal), recompute the value
+          and update the cache.
+        - If `recompute` is False, return the cached value if available. Recompute if not cached.
+        """
+        cache_key = CacheKeys.WORKER_ID_LAST_CRASH_TIME.format(worker_id, crash)
+
+        if not recompute:
+            # Attempt to fetch from cache
+            cached_value = cache.get(cache_key)
+            if cached_value is not None:
+                return cached_value
+
+        # Recompute the time since the last crash
         last_crash_time = (
             Multiplier.objects.filter(worker__id=worker_id, crash__gte=crash)
             .order_by("-created_at")
@@ -78,10 +93,13 @@ class Probability(Analytics):
         )  # Descending order
 
         if last_crash_time is None:
-            return float("inf")  # No crash >= threshold found
+            result = float("inf")  # No crash >= threshold found
+        else:
+            result = (now() - last_crash_time).total_seconds()
 
-        seconds = (now() - last_crash_time).total_seconds()
-        return seconds
+        # Update the cache
+        cache.set(cache_key, result, timeout=60 * 60)  # Cache for 1 hour
+        return result
 
     @staticmethod
     def get_intervals_from_cache(worker_id: str, crash: float) -> SortedList:

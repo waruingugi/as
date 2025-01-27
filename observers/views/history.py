@@ -16,6 +16,8 @@ class WorkerHistoryView(APIView):
     belonging to a specific app.
     """
 
+    serializer_class = WorkerHistorySerializer
+
     def get(self, request, app):
         # Validate app_name
         if app not in BettingApps.list():

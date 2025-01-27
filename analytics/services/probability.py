@@ -64,6 +64,7 @@ class Probability(Analytics):
         cache_key = CacheKeys.WORKER_ID_CRASH_QUERY.format(worker_id, crash)
 
         def fallback():
+            logger.info(f"Fetching {crash}x caches for {worker_id}.")
             three_days_ago = now() - timedelta(days=3)
             crashes = list(
                 Multiplier.objects.filter(
@@ -87,7 +88,7 @@ class Probability(Analytics):
         worker_id: str, crash: float, recompute: bool = False
     ) -> float:
         """
-        Fetch or compute the time (in seconds) since the last crash meeting or exceeding the threshold.
+        Fetch or compute the time (in seconds) since the last crash.
 
         - If `recompute` is True (e.g., when called by a Django signal), recompute the value
           and update the cache.
@@ -102,6 +103,7 @@ class Probability(Analytics):
                 return cached_value
 
         # Recompute the time since the last crash
+        logger.info(f"Recomputing seconds since {crash}x caches for {worker_id}.")
         last_crash_time = (
             Multiplier.objects.filter(worker__id=worker_id, crash__gte=crash)
             .order_by("-created_at")
@@ -115,7 +117,7 @@ class Probability(Analytics):
             result = (now() - last_crash_time).total_seconds()
 
         # Update the cache
-        cache.set(cache_key, result, timeout=60 * 60)  # Cache for 1 hour
+        cache.set(cache_key, result, timeout=60)
         return result
 
     @staticmethod
@@ -123,6 +125,7 @@ class Probability(Analytics):
         """Fetch or compute crash intervals."""
 
         def fallback():
+            logger.info(f"Get {crash}x intervals for {worker_id}.")
             crashes = Probability.fetch_gte_crashes(worker_id, crash)
             if len(crashes) < 2:
                 return SortedList()

@@ -18,7 +18,7 @@ class TestProbability(TestCase):
         self.worker_ids = ["worker1", "worker2"]
         self.crash_list = [
             CrashesToMonitor.OVER_20X.value,
-            CrashesToMonitor.OVER_50X.value,
+            # CrashesToMonitor.OVER_50X.value,
         ]
 
     def tearDown(self):

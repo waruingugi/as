@@ -17,3 +17,4 @@ class ErrorCodes(str, Enum):
         "The phone number or password is incorrect. Please try again."
     )
     INVALID_WORKER_API_KEY = "Invalid or expired worker API key"
+    INVALID_APP_NAME = "Invalid app name."

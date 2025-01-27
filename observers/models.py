@@ -21,6 +21,12 @@ class Multiplier(Base):
         "workers.Worker", on_delete=models.CASCADE, related_name="multipliers"
     )
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["worker", "crash", "created_at"]),
+        ]
+        ordering = ["-created_at"]
+
     objects = MultiplierManager()
 
     def __str__(self) -> str:

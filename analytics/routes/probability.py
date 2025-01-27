@@ -5,5 +5,5 @@ from analytics.views.probability import WorkerProbabilitiesView
 app_name = "probabilities"
 
 urlpatterns = [
-    path("<str:app_name>/", WorkerProbabilitiesView.as_view(), name="detail"),
+    path("<str:app>/", WorkerProbabilitiesView.as_view(), name="detail"),
 ]

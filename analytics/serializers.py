@@ -8,6 +8,6 @@ class ProbabilitySerializer(serializers.Serializer):
 
 
 class WorkerProbabilitySerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.UUIDField()
     name = serializers.CharField()
     probability = serializers.DictField(child=ProbabilitySerializer())

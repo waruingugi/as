@@ -22,7 +22,7 @@ class WorkerProbabilitiesView(APIView):
 
         workers = Worker.objects.filter(app=app)
         if not workers.exists():
-            raise NotFound("No workers found for the specified app.")
+            raise NotFound(ErrorCodes.WORKERS_NOT_FOUND.value)
 
         # Prepare the response data
         response_data = [format_worker_probabilities(worker) for worker in workers]

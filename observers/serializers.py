@@ -24,3 +24,14 @@ class MultiplierReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Multiplier
         fields = ["crash", "app", "name"]
+
+
+class CrashSerializer(serializers.Serializer):
+    created_at = serializers.DateTimeField()
+    crash = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
+class WorkerHistorySerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    crash = serializers.ListField(child=CrashSerializer())

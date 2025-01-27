@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from uuid import uuid4
 
 from django.urls import reverse
@@ -5,6 +6,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from commons.constants import BettingApps, SeedNames
+from commons.errors import ErrorCodes
 from commons.tests.test_base import UserBaseAPITestCase
 from observers.models import Multiplier
 from workers.models import Worker
@@ -157,3 +159,73 @@ class MultiplierListViewTests(UserBaseAPITestCase):
         self.force_authenticate_user()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class TestWorkerHistoryView(UserBaseAPITestCase):
+    def setUp(self) -> None:
+        self.app_name = BettingApps.BETIKA.value
+
+        # Create workers and multipliers
+        self.worker1 = Worker.objects.create(
+            app=self.app_name, name=SeedNames.SEED_00.value
+        )
+        self.worker2 = Worker.objects.create(
+            app=self.app_name, name=SeedNames.SEED_01.value
+        )
+
+        self.multipliers_worker1 = [
+            Multiplier.objects.create(worker=self.worker1, crash=15.5),
+            Multiplier.objects.create(worker=self.worker1, crash=10.0),
+        ]
+
+        self.multipliers_worker2 = [
+            Multiplier.objects.create(worker=self.worker2, crash=7.0),
+            Multiplier.objects.create(worker=self.worker2, crash=5.0),
+        ]
+
+        self.url = reverse("multipliers:history", args=[self.app_name])
+        self.force_authenticate_user()
+
+    @patch("observers.views.history.get_workers_crash_history")
+    def test_get_worker_history_success(self, mock_get_workers_crash_history) -> None:
+        # Mock the crash history response
+        mock_get_workers_crash_history.return_value = [
+            {
+                "id": self.worker1.id,
+                "name": self.worker1.name,
+                "crash": [
+                    {"created_at": "2025-01-27T10:00:00Z", "crash": 15.5},
+                    {"created_at": "2025-01-27T09:00:00Z", "crash": 10.0},
+                ],
+            },
+            {
+                "id": self.worker2.id,
+                "name": self.worker2.name,
+                "crash": [
+                    {"created_at": "2025-01-27T08:00:00Z", "crash": 7.0},
+                    {"created_at": "2025-01-27T07:00:00Z", "crash": 5.0},
+                ],
+            },
+        ]
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        mock_get_workers_crash_history.assert_called_once_with(self.app_name)
+
+    def test_get_worker_history_invalid_app(self) -> None:
+        invalid_url = reverse("multipliers:history", args=["INVALID_APP"])
+
+        response = self.client.get(invalid_url)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {"error": ErrorCodes.INVALID_APP_NAME.value})
+
+    def test_get_worker_history_no_workers(self) -> None:
+        Worker.objects.all().delete()  # Remove all workers for the app
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["detail"], ErrorCodes.WORKERS_NOT_FOUND.value)

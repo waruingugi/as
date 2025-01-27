@@ -54,14 +54,14 @@ class Probability(Analytics):
     def purge_crash_query_cache_for_worker(worker_id: str) -> None:
         """Delete crash queries for a specific worker saved in cache."""
         Probability._purge_cache_keys_for_worker(
-            CacheKeys.WORKER_ID_CRASH_QUERY,
+            CacheKeys.WORKER_GTE_CRASH_QUERY,
             worker_id,
         )
 
     @staticmethod
     def fetch_gte_crashes(worker_id: str, crash: float) -> list[datetime]:
         """Fetch crashes from the database or cache in ascending order (crucial when calculating intervals)."""
-        cache_key = CacheKeys.WORKER_ID_CRASH_QUERY.format(worker_id, crash)
+        cache_key = CacheKeys.WORKER_GTE_CRASH_QUERY.format(worker_id, crash)
 
         def fallback():
             logger.info(f"Fetching {crash}x caches for {worker_id}.")
@@ -94,7 +94,7 @@ class Probability(Analytics):
           and update the cache.
         - If `recompute` is False, return the cached value if available. Recompute if not cached.
         """
-        cache_key = CacheKeys.WORKER_ID_LAST_CRASH_TIME.format(worker_id, crash)
+        cache_key = CacheKeys.WORKER_LAST_CRASH_TIME.format(worker_id, crash)
 
         if not recompute:
             # Attempt to fetch from cache

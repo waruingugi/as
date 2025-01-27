@@ -1,70 +1,17 @@
 from unittest import TestCase
+from unittest.mock import patch
 from uuid import uuid4
 
-from commons.constants import BettingApps, SeedNames
+from django.core.cache import cache
+
+from commons.constants import DEFAULT_CACHE_DURATION, BettingApps, CacheKeys, SeedNames
 from observers.models import Multiplier
-from observers.utils import get_new_multipliers
+from observers.utils import (
+    get_new_multipliers,
+    get_worker_crash_list,
+    get_workers_crash_history,
+)
 from workers.models import Worker
-
-# from observers.utils import get_new_multipliers, parse_multipliers
-
-# class ParsePayoutsTestCase(TestCase):
-#     def test_valid_input(self):
-#         """Test with a valid input string"""
-#         input_string = "1.82x, 2.45x, 3.50x"
-#         expected_output = [1.82, 2.45, 3.50]
-#         self.assertEqual(parse_multipliers(input_string), expected_output)
-
-#     def test_valid_input_no_spaces(self):
-#         """Test with valid input string without spaces"""
-#         input_string = "1.82x,2.45x,3.50x"
-#         expected_output = [1.82, 2.45, 3.50]
-#         self.assertEqual(parse_multipliers(input_string), expected_output)
-
-#     def test_empty_input(self):
-#         """Test with an empty input string"""
-#         with self.assertRaises(ValueError) as context:
-#             parse_multipliers("")
-#         self.assertEqual(str(context.exception), ErrorCodes.EMPTY_MULTIPLIER_STRING)
-
-#     def test_invalid_format(self):
-#         """Test with an invalid format"""
-#         input_string = "1.82, 2.45x, 3.50y"
-#         with self.assertRaises(ValueError) as context:
-#             parse_multipliers(input_string)
-#         self.assertEqual(str(context.exception), ErrorCodes.INVALID_MULTIPLIER_STRING)
-
-#     def test_non_numeric_values(self):
-#         """Test with non-numeric values"""
-#         input_string = "abcx, 2.45x, 3.50x"
-#         with self.assertRaises(ValueError) as context:
-#             parse_multipliers(input_string)
-#         self.assertEqual(str(context.exception), ErrorCodes.INVALID_MULTIPLIER_STRING)
-
-#     def test_non_string_input(self):
-#         """Test with non-string input"""
-#         input_data = 12345
-#         with self.assertRaises(ValueError) as context:
-#             parse_multipliers(input_data)
-#         self.assertEqual(str(context.exception), ErrorCodes.EMPTY_MULTIPLIER_STRING)
-
-#     def test_extra_whitespace(self):
-#         """Test with extra whitespace in the string"""
-#         input_string = "  1.82x  ,   2.45x  , 3.50x "
-#         expected_output = [1.82, 2.45, 3.50]
-#         self.assertEqual(parse_multipliers(input_string), expected_output)
-
-#     def test_large_numbers(self):
-#         """Test with large numbers"""
-#         input_string = "12345.67x, 98765.43x"
-#         expected_output = [12345.67, 98765.43]
-#         self.assertEqual(parse_multipliers(input_string), expected_output)
-
-#     def test_single_value(self):
-#         """Test with a single valid multiplier"""
-#         input_string = "5.67x"
-#         expected_output = [5.67]
-#         self.assertEqual(parse_multipliers(input_string), expected_output)
 
 
 class GetNewPayoutsTestCase(TestCase):
@@ -82,7 +29,8 @@ class GetNewPayoutsTestCase(TestCase):
     def test_new_multipliers_when_model_is_empty(self) -> None:
         """Test the func. returns all multipliers when the Multiplier model is empty"""
         new_multipliers = get_new_multipliers(
-            worker_id=self.worker.id, new_multipliers_list=self.multipliers_list
+            worker_id=self.worker.id,  # type: ignore
+            new_multipliers_list=self.multipliers_list,  # type: ignore
         )
         self.assertListEqual(new_multipliers, self.multipliers_list)
 
@@ -96,8 +44,100 @@ class GetNewPayoutsTestCase(TestCase):
         Multiplier.objects.bulk_create(objs)
 
         new_multipliers_list = get_new_multipliers(
-            worker_id=self.worker.id,
+            worker_id=self.worker.id,  # type: ignore
             new_multipliers_list=[5.67, 1.00, 1.21] + self.multipliers_list,
         )
 
         self.assertListEqual(new_multipliers_list, [5.67, 1.00, 1.21])
+
+
+class TestGetWorkerCrashList(TestCase):
+    def setUp(self) -> None:
+        self.worker = Worker.objects.create(
+            app=BettingApps.BETIKA.value, name=SeedNames.SEED_00.value
+        )
+        self.multipliers = [
+            Multiplier.objects.create(worker=self.worker, crash=15.5),
+            Multiplier.objects.create(worker=self.worker, crash=10.0),
+            Multiplier.objects.create(worker=self.worker, crash=5.0),
+        ]
+
+    def test_get_worker_crash_list_returns_correct_data(self) -> None:
+        result = get_worker_crash_list(self.worker.id, count=2)  # type: ignore
+        self.assertEqual(len(result), 2)
+
+        self.assertEqual(float(result[0]["crash"]), self.multipliers[2].crash)
+        self.assertEqual(float(result[1]["crash"]), self.multipliers[1].crash)
+
+    def test_get_worker_crash_list_empty_worker(self) -> None:
+        empty_worker = Worker.objects.create(
+            app=BettingApps.BETIKA.value, name=SeedNames.SEED_01.value
+        )
+        result = get_worker_crash_list(empty_worker.id, count=2)  # type: ignore
+        self.assertEqual(result, [])
+
+
+class TestGetWorkersCrashHistory(TestCase):
+    def setUp(self) -> None:
+        self.worker1 = Worker.objects.create(
+            app=BettingApps.BETIKA.value, name=SeedNames.SEED_00.value
+        )
+        self.worker2 = Worker.objects.create(
+            app=BettingApps.BETIKA.value, name=SeedNames.SEED_01.value
+        )
+
+        self.multipliers_worker1 = [
+            Multiplier.objects.create(worker=self.worker1, crash=15.5),
+            Multiplier.objects.create(worker=self.worker1, crash=10.0),
+        ]
+
+        self.multipliers_worker2 = [
+            Multiplier.objects.create(worker=self.worker2, crash=7.0),
+            Multiplier.objects.create(worker=self.worker2, crash=5.0),
+        ]
+
+    @patch("observers.utils.get_worker_crash_list")
+    def test_get_workers_crash_history_recompute(
+        self, mock_get_worker_crash_list
+    ) -> None:
+        mock_get_worker_crash_list.side_effect = lambda worker_id, count: [
+            {"created_at": "2025-01-26T10:00:00Z", "crash": 20.0}
+        ]
+
+        result = get_workers_crash_history(
+            app=BettingApps.BETIKA.value, count=1, recompute=True
+        )
+        self.assertEqual(len(result), 2)
+        self.assertIn(self.worker1.id, [result[0]["id"], result[1]["id"]])
+        self.assertIn(self.worker2.id, [result[0]["id"], result[1]["id"]])
+        mock_get_worker_crash_list.assert_called()
+
+    def test_get_workers_crash_history_cache(self) -> None:
+        cache_key_worker1 = CacheKeys.WORKER_CRASH_QUERY.format(self.worker1.id)
+        cache_key_worker2 = CacheKeys.WORKER_CRASH_QUERY.format(self.worker2.id)
+
+        cache.set(
+            cache_key_worker1,
+            [{"created_at": "2025-01-26T10:00:00Z", "crash": 20.0}],
+            DEFAULT_CACHE_DURATION,
+        )
+        cache.set(
+            cache_key_worker2,
+            [{"created_at": "2025-01-26T11:00:00Z", "crash": 15.0}],
+            DEFAULT_CACHE_DURATION,
+        )
+
+        result = get_workers_crash_history(
+            app=BettingApps.BETIKA.value, count=1, recompute=False
+        )
+        self.assertEqual(len(result), 2)
+        self.assertEqual(
+            result[1]["crash"], [{"created_at": "2025-01-26T10:00:00Z", "crash": 20.0}]
+        )
+        self.assertEqual(
+            result[0]["crash"], [{"created_at": "2025-01-26T11:00:00Z", "crash": 15.0}]
+        )
+
+    def test_get_workers_crash_history_empty_workers(self) -> None:
+        result = get_workers_crash_history(app="NON_EXISTENT_APP", count=1)
+        self.assertEqual(result, [])

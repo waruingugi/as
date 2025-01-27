@@ -1,16 +1,22 @@
-from analytics.constants import CrashesToMonitor
+import random
+
+from analytics.constants import OVER_20X_SUGGESTIONS, CrashesToMonitor
 from analytics.services import Probability
 
 
 def format_worker_probabilities(worker) -> dict:
     probabilities = {}
 
-    for crash in CrashesToMonitor:
-        value = crash.value
-        probability = Probability.calculate_probability(worker.id, value)
-        probabilities[f"over_{int(value)}x"] = {
+    for crash in CrashesToMonitor.list():
+        probability = Probability.calculate_probability(worker.id, crash)
+        suggestion = ""
+        # Add suggestions only for over_20x
+        if crash == CrashesToMonitor.OVER_20X.value:
+            suggestion = get_over_20x_suggestion(probability)
+
+        probabilities[f"over_{int(crash)}x"] = {
             "probability": probability,
-            "suggestion": "",  # Suggestion logic to be implemented later
+            "suggestion": suggestion,  # Suggestion logic to be implemented later
         }
 
     return {
@@ -18,3 +24,14 @@ def format_worker_probabilities(worker) -> dict:
         "name": worker.name,
         "probability": probabilities,
     }
+
+
+# TODO: Calculate probabilites from DB and derive suggestions.
+# This will be more dynamic and complex in future
+def get_over_20x_suggestion(probability: float) -> str:
+    if probability > 0.7:  # High probability
+        return random.choice(OVER_20X_SUGGESTIONS["HIGH"])
+    elif 0.4 < probability <= 0.7:  # Moderate probability
+        return random.choice(OVER_20X_SUGGESTIONS["MODERATE"])
+    else:  # Low probability
+        return random.choice(OVER_20X_SUGGESTIONS["LOW"])

@@ -1,8 +1,8 @@
-from unittest import TestCase
 from unittest.mock import patch
 from uuid import uuid4
 
 from django.core.cache import cache
+from django.test import TestCase
 
 from commons.constants import DEFAULT_CACHE_DURATION, BettingApps, CacheKeys, SeedNames
 from observers.models import Multiplier
@@ -14,7 +14,7 @@ from observers.utils import (
 from workers.models import Worker
 
 
-class GetNewPayoutsTestCase(TestCase):
+class GetNewMultipliersTestCase(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.multipliers_list = [1.21, 4.33, 1.18]
@@ -36,7 +36,6 @@ class GetNewPayoutsTestCase(TestCase):
 
     def test_new_multipliers_when_model_is_not_empty(self) -> None:
         """Test the func. returns only the new payouts"""
-        # Reverse the payouts_list because the last element is the earliest payout
         objs = [
             Multiplier(worker=self.worker, crash=crash)
             for crash in self.multipliers_list[::-1]
@@ -65,7 +64,6 @@ class TestGetWorkerCrashList(TestCase):
     def test_get_worker_crash_list_returns_correct_data(self) -> None:
         result = get_worker_crash_list(self.worker.id, count=2)  # type: ignore
         self.assertEqual(len(result), 2)
-
         self.assertEqual(float(result[0]["crash"]), self.multipliers[2].crash)
         self.assertEqual(float(result[1]["crash"]), self.multipliers[1].crash)
 

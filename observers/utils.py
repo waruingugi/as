@@ -1,6 +1,6 @@
 from django.core.cache import cache
 
-from commons.constants import DEFAULT_CACHE_DURATION, CacheKeys
+from commons.constants import DEFAULT_CACHE_DURATION, PAGE_SIZE, CacheKeys
 from observers.models import Multiplier
 from workers.models import Worker
 
@@ -28,6 +28,12 @@ def get_new_multipliers(
     return new_multipliers_list
 
 
+def refresh_worker_crash_query(instances) -> None:
+    worker_ids = {instance.worker_id for instance in instances}
+    for worker_id in worker_ids:
+        get_worker_crash_list(worker_id, PAGE_SIZE)
+
+
 def get_worker_crash_list(worker_id: str, count: int) -> list:
     """
     Fetch the last `count` crashes for a worker from the database.
@@ -35,7 +41,8 @@ def get_worker_crash_list(worker_id: str, count: int) -> list:
     multipliers_qs = Multiplier.objects.filter(worker_id=worker_id).order_by(
         "-created_at"
     )[:count]
-    return [
+
+    crash_list = [
         {
             "created_at": m.created_at,
             "crash": m.crash,
@@ -43,9 +50,14 @@ def get_worker_crash_list(worker_id: str, count: int) -> list:
         for m in multipliers_qs
     ]
 
+    cache_key = CacheKeys.WORKER_CRASH_QUERY.format(worker_id)
+    cache.set(cache_key, crash_list, DEFAULT_CACHE_DURATION)
+
+    return crash_list
+
 
 def get_workers_crash_history(
-    app: str, count: int = 50, recompute: bool = False
+    app: str, count: int = PAGE_SIZE, recompute: bool = False
 ) -> list:
     workers = Worker.objects.filter(app=app)
     if not workers.exists():  # Handle empty queryset
@@ -53,16 +65,14 @@ def get_workers_crash_history(
 
     data = []
     for worker in workers:
-        cache_key = CacheKeys.WORKER_CRASH_QUERY.format(worker.id)
-
         if recompute:
             crash_list = get_worker_crash_list(worker.id, count)  # type: ignore
-            cache.set(cache_key, crash_list, DEFAULT_CACHE_DURATION)
+
         else:
+            cache_key = CacheKeys.WORKER_CRASH_QUERY.format(worker.id)
             crash_list = cache.get(cache_key)
             if crash_list is None:
                 crash_list = get_worker_crash_list(worker.id, count)  # type: ignore
-                cache.set(cache_key, crash_list, DEFAULT_CACHE_DURATION)
 
         data.append({"id": worker.id, "name": worker.name, "crash": crash_list})
 

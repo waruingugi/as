@@ -13,6 +13,10 @@ WORKER_API_KEY_LEN: int = 32
 DEFAULT_CACHE_DURATION: int = 300  # 5 minutes
 
 
+# PAGE SIZE
+PAGE_SIZE: int = 50
+
+
 class BettingApps(str, Enum):
     """Apps tracked by the API"""
 

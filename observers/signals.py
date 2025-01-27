@@ -2,6 +2,7 @@ from django.dispatch import receiver
 
 from analytics.services.probability import Probability
 from observers.models import Multiplier, post_bulk_create
+from observers.utils import refresh_worker_crash_query
 
 
 @receiver(post_bulk_create, sender=Multiplier)
@@ -15,3 +16,6 @@ def handle_bulk_created(sender, instances, **kwargs) -> None:
 
     # Delegate to the analytics app
     Probability.recompute_time_since_last_crash(instances)
+
+    # Refresh query for specific worker ids
+    refresh_worker_crash_query(instances)

@@ -53,43 +53,44 @@ def reboot_worker(worker_id) -> None:
     Reboot a worker pod by shutting it down in the Kubernetes cluster.
     """
     try:
-        # Fetch the worker from the database
-        worker = Worker.objects.get(id=worker_id)
-        if cache.get(CacheKeys.REBOOTED_WORKER.format(worker_id)):
-            logger.info(
-                f"Worker {worker.name} for {worker.app} was rebooted recently. Skipping..."
-            )
-            return
+        REBOOT_WORKERS = bool(int(os.environ["REBOOT_WORKERS"]))
+        if REBOOT_WORKERS:  # Reboot workers only if setting is True
+            worker = Worker.objects.get(id=worker_id)
+            if cache.get(CacheKeys.REBOOTED_WORKER.format(worker_id)):
+                logger.info(
+                    f"Worker {worker.name} for {worker.app} was rebooted recently. Skipping..."
+                )
+                return
 
-        logger.info(f"Rebooting {worker.name} for {worker.app}")
+            logger.info(f"Rebooting {worker.name} for {worker.app}")
 
-        # Parse the worker name and app
-        seed_number = worker.name.split(" ")[-1][-1]  # Extract the seed number
-        app_name = worker.app.lower()  # Convert app name to lowercase
+            # Parse the worker name and app
+            seed_number = worker.name.split(" ")[-1][-1]  # Extract the seed number
+            app_name = worker.app.lower()  # Convert app name to lowercase
 
-        # Construct the pod name
-        pod_name = f"{app_name}-seed-{seed_number}"
+            # Construct the pod name
+            pod_name = f"{app_name}-seed-{seed_number}"
 
-        # Fetch Kubernetes API base URL and token from environment variables
-        kubernetes_base_url = os.getenv("KUBERNETES_API_BASE_URL")
-        kubernetes_token = os.getenv("KUBERNETES_TOKEN")
+            # Fetch Kubernetes API base URL and token from environment variables
+            kubernetes_base_url = os.getenv("KUBERNETES_API_BASE_URL")
+            kubernetes_token = os.getenv("KUBERNETES_TOKEN")
 
-        # Construct the request URL
-        url = f"{kubernetes_base_url}/api/v1/namespaces/{app_name}/pods/{pod_name}"
+            # Construct the request URL
+            url = f"{kubernetes_base_url}/api/v1/namespaces/{app_name}/pods/{pod_name}"
 
-        # Set up headers
-        headers = {"Authorization": f"Bearer {kubernetes_token}"}
+            # Set up headers
+            headers = {"Authorization": f"Bearer {kubernetes_token}"}
 
-        # Send the DELETE request to shut down the pod
-        response = requests.delete(url, headers=headers, verify=False)
+            # Send the DELETE request to shut down the pod
+            response = requests.delete(url, headers=headers, verify=False)
 
-        if response.status_code == 200:
-            logger.info(f"Successfully rebooted worker pod: {pod_name}")
-        else:
-            logger.error(
-                f"Failed to reboot worker pod: {pod_name}. "
-                f"Status code: {response.status_code}, Response: {response.text}"
-            )
+            if response.status_code == 200:
+                logger.info(f"Successfully rebooted worker pod: {pod_name}")
+            else:
+                logger.error(
+                    f"Failed to reboot worker pod: {pod_name}. "
+                    f"Status code: {response.status_code}, Response: {response.text}"
+                )
 
     except Exception as e:
         logger.error(f"An error occurred while rebooting the worker: {str(e)}")

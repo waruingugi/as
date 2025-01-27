@@ -17,25 +17,32 @@ PROB_DEFAULT_CACHE_DURATION: int = 600
 
 # Over 20x suggestions
 OVER_20X_SUGGESTIONS = {
+    "EXTREME": [
+        "Odds are huge—risk is equally massive! Bet carefully.",
+        "Extremely high chance, but watch for big losses too.",
+        "Sky-high odds! Exercise caution to avoid major losses.",
+        "Huge crash chance! Over 20x might come soon, stay wary.",
+        "Extreme potential—bet wisely or risk a painful downfall.",
+    ],
     "HIGH": [
-        "High crash chance! Bet soon for over 20x profit.",
-        "Strong odds! Over 20x is likely—place your bet now.",
-        "Great chance ahead! Aim for that 20x boost.",
-        "Big potential gain! Jump in for over 20x returns.",
-        "Don't miss out! 20x crash probability is high.",
+        "High 20x odds—great opportunity, but bet responsibly.",
+        "Strong chance of 20x soon—act now but tread carefully.",
+        "High probability of big gains—still, manage your risk.",
+        "Chance is solid! A 20x crash may be near—bet prudently.",
+        "Big payout likely—just don’t overextend your bankroll.",
     ],
     "MODERATE": [
-        "Moderate chance for 20x. Weigh options before betting.",
-        "Slight risk. 20x might happen, but caution is advised.",
-        "Moderate odds of big win. Bet carefully for 20x.",
-        "Chance is fair, but weigh your bets for a 20x payout.",
-        "20x is possible, but keep an eye on your bankroll.",
+        "Moderate shot at 20x. Weigh options before betting.",
+        "Fair odds—20x might happen, but caution is advised.",
+        "Chance at 20x is decent—bet carefully to minimize risk.",
+        "Moderate 20x potential—mind your stakes and time it well.",
+        "20x could occur—consider a measured wager approach.",
     ],
     "LOW": [
-        "Low chance of hitting 20x. Safer to wait for better odds.",
-        "Chances are slim. Over 20x seems unlikely right now.",
-        "Odds for 20x are low. It's probably best to hold off.",
-        "20x looks unlikely. You might save funds for later bets.",
-        "Low probability now. Holding your bet could be wiser.",
+        "Low odds for 20x—waiting might be the wiser choice.",
+        "Chance is slim. Over 20x seems unlikely right now.",
+        "Minimal 20x potential—save funds for a better moment.",
+        "Probably not worth the bet—20x crash is improbable.",
+        "Small chance for 20x—holding off could be smarter.",
     ],
 }

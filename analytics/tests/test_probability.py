@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
 from django.test import TestCase
@@ -217,3 +217,30 @@ class TestProbability(TestCase):
         Probability.purge_crash_query_cache_for_worker(self.worker_id)
 
         mock_purge_cache.assert_called_once_with(self.worker_id)
+
+    @patch("analytics.services.probability.Probability.time_since_last_crash")
+    def test_recompute_time_since_last_crash(self, mock_time_since_last_crash):
+        """Test recompute_time_since_last_crash for proper recomputation."""
+        # Create mock Multiplier instances
+        mock_instance_1 = MagicMock(worker_id="worker1")
+        mock_instance_2 = MagicMock(worker_id="worker2")
+        mock_instance_3 = MagicMock(worker_id="worker1")
+        instances = [mock_instance_1, mock_instance_2, mock_instance_3]
+
+        # Mock time_since_last_crash behavior
+        mock_time_since_last_crash.return_value = 3600.0
+
+        # Call the function
+        Probability.recompute_time_since_last_crash(instances)
+
+        # Ensure time_since_last_crash is called for each unique worker_id and crash threshold
+        expected_calls = [
+            ((worker_id, crash_threshold, True),)
+            for worker_id in {"worker1", "worker2"}
+            for crash_threshold in CrashesToMonitor.list()
+        ]
+        mock_time_since_last_crash.assert_has_calls(expected_calls, any_order=True)
+        self.assertEqual(
+            mock_time_since_last_crash.call_count,
+            len({"worker1", "worker2"}) * len(CrashesToMonitor.list()),
+        )

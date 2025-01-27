@@ -15,6 +15,23 @@ from observers.models import Multiplier
 # Probability Class
 class Probability(Analytics):
     @staticmethod
+    def recompute_time_since_last_crash(instances):
+        """
+        Recompute caches crash time count for worker IDs for given instances.
+        """
+        if not instances:
+            return
+
+        # Collect unique worker IDs from the instances
+        worker_ids = {instance.worker_id for instance in instances}
+
+        # Iterate over worker IDs and crash thresholds to recompute
+        for worker_id in worker_ids:
+            for crash_threshold in CrashesToMonitor.list():
+                # Recompute time since last crash for each combination
+                Probability.time_since_last_crash(worker_id, crash_threshold, True)
+
+    @staticmethod
     def _purge_cache_keys_for_worker(cache_key_template: str, worker_id: str) -> None:
         """Helper method to generate and delete cache keys for a specific worker in bulk."""
         crash_list = CrashesToMonitor.list()

@@ -1,5 +1,6 @@
 from bisect import bisect_right
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 from django.core.cache import cache
 from django.utils.timezone import now
@@ -142,7 +143,7 @@ class Probability(Analytics):
         )
 
     @staticmethod
-    def calculate_probability(worker_id: str, crash: float) -> float:
+    def calculate_probability(worker_id: str, crash: float) -> Decimal:
         """Calculate probability for the given metric."""
         count = Probability.time_since_last_crash(worker_id, crash)
         intervals = Probability.get_intervals_from_cache(worker_id, crash)
@@ -151,11 +152,11 @@ class Probability(Analytics):
             logger.info(
                 f"No qualifying crash found. Returning 0 probability for worker_id={worker_id}, crash={crash}.",
             )
-            return 0.0
+            return Decimal(0.0)
 
         position = bisect_right(intervals, count)
-        probability = round((position / len(intervals)) * 100, 2)
+        probability = Decimal((position / len(intervals)) * 100)
         logger.info(
-            f"Calculated probability: {probability}% for worker_id={worker_id}, crash={crash}.",
+            f"Calculated probability for worker_id={worker_id}, crash={crash}.",
         )
         return probability

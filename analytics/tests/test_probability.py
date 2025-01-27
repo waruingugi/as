@@ -180,7 +180,7 @@ class TestProbability(TestCase):
         )
         mock_time_since_last_crash.assert_called_once()
         mock_get_intervals.assert_called_once()
-        self.assertEqual(probability, 33.33)
+        self.assertEqual(float(round(probability, 2)), 33.33)
 
         # Test no intervals
         mock_get_intervals.return_value = SortedList()

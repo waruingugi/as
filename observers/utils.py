@@ -1,6 +1,7 @@
 from django.core.cache import cache
 
 from commons.constants import DEFAULT_CACHE_DURATION, PAGE_SIZE, CacheKeys
+from commons.logger import logger
 from observers.models import Multiplier
 from workers.models import Worker
 
@@ -69,6 +70,7 @@ def get_workers_crash_history(
             crash_list = get_worker_crash_list(worker.id, count)  # type: ignore
 
         else:
+            logger.info(f"Get cached worker crash list for worker:{worker.id}")
             cache_key = CacheKeys.WORKER_CRASH_QUERY.format(worker.id)
             crash_list = cache.get(cache_key)
             if crash_list is None:

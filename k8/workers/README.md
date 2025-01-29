@@ -144,30 +144,67 @@ This will display only the events related to the specified Service.
 kubectl get events -n <namespace> --sort-by='.metadata.creationTimestamp' | grep <service-name>
 ```
 
-Run helm lint to catch any issues or warnings.
-```
-helm lint ./as-workers
-```
-
-Validate the rendered templates with helm template:
-```
-helm template ./as-workers --set app=<app>
-```
-
 ### 6. Upgrading or Deleting a Release
-Upgrade a Release
-To apply changes to the chart:
+#### Upgrade a Release
+Always ensure the required secrets are created before deploying the chart.
+Use `helm list` to track all deployed releases.
+
+#### To apply changes to the chart:
 ```
-helm upgrade <release-name> ./as-workers --set app=<app-name>
+helm upgrade <release-name> ./workers --description <some-description> \
+  --set app=<app> \
+  --set dockerRegistry.username=<> \
+  --set dockerRegistry.password=<> \
+  --set dockerRegistry.email=<> \
+  --set secrets.pod0.API_KEY=<> \
+  --set secrets.pod0.PHONE_NUMBER=<> \
+  --set secrets.pod0.PASSWORD=<> \
+  --set secrets.pod1.API_KEY=<> \
+  --set secrets.pod1.PHONE_NUMBER=<> \
+  --set secrets.pod1.PASSWORD=<> \
+  --set secrets.pod2.API_KEY=<> \
+  --set secrets.pod2.PHONE_NUMBER=<> \
+  --set secrets.pod2.PASSWORD=<> \
+  --set secrets.VNC_PASSWORD=<> \
+  --set secrets.BASE_URL=<>
 ```
 
-Delete a Release
-To remove a deployed app:
+#### To view the release:
 ```
-helm uninstall <release-name>
+helm history <release-name>
+```
+
+#### Delete a Release
+When you run helm uninstall, it completely removes the release by default. However, if you want to keep the release history so you can roll back or inspect past releases, you should use the `--keep-history` flag.
+```
+helm uninstall <release-name> --keep-history
 ```
 This will delete all resources in the app's namespace.
 
 ## Notes
-Always ensure the required secrets are created before deploying the chart.
-Use `helm list` to track all deployed releases.
+We use new relic to monitor our k8s. 
+Please follow instruction in new relic dashboard, these are just sample commands.
+
+#### Install new-relic to monitor k8
+```
+helm upgrade --install newrelic-bundle ./nri-bundle \
+  --namespace=newrelic \
+  --create-namespace \
+  --set global.licenseKey=<> \
+  --set global.cluster=<>
+```
+
+#### To update new relic configuration, see `values.yaml` in `k8/nri-bundle`:
+```
+helm repo add newrelic https://helm-charts.newrelic.com && helm repo update && kubectl create namespace newrelic ; helm upgrade --install newrelic-bundle newrelic/nri-bundle -n newrelic --values values.yaml
+```
+
+#### To apply APM use:
+```
+kubectl apply -f instrumentation.yaml -n newrelic
+```
+
+#### After install APM, remember to restart pods in all namespaces:
+```
+kubectl rollout restart statefulset betika-seed -n betika
+```

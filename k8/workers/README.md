@@ -182,7 +182,7 @@ helm uninstall <release-name> --keep-history
 This will delete all resources in the app's namespace.
 
 ## Notes
-We use new relic to monitor our k8s. 
+We use new relic  OR betterstack(a simpler approach) to monitor our k8s. 
 Please follow instruction in new relic dashboard, these are just sample commands.
 
 #### Install new-relic to monitor k8

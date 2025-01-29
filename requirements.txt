@@ -29,6 +29,8 @@ inflection==0.5.1
 jsonschema==4.23.0
 jsonschema-specifications==2024.10.1
 kombu==5.4.2
+logtail-python==0.3.2
+msgpack==1.1.0
 nodeenv==1.9.1
 packaging==24.2
 phonenumberslite==8.13.52

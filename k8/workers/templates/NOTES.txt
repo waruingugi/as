@@ -1,0 +1,17 @@
+{{- if .Values.app }}
+Thank you for deploying the {{ .Values.app }} application using the as-workers Helm chart!
+
+Here are some helpful commands to get started:
+
+1. **View Services**:
+   To view the services created for the application:
+   kubectl get svc -n {{ .Values.app }}
+
+2. **View pods**:
+   To view the services created for the application:
+   kubectl get pods -n {{ .Values.app }}
+
+3. **View Pod Logs**:
+   To view the services created for the application:
+   kubectl logs {{ .Values.app }}-seed-0 -n {{ .Values.app }}
+{{- end }}

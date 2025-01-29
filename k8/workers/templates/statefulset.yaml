@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.app }}-seed
+  namespace: {{ .Values.app }}
+spec:
+  replicas: {{ .Values.statefulset.replicas }}
+  serviceName: {{ .Values.app }}-svc-service
+  selector:
+    matchLabels:
+      app: {{ .Values.app }}-pod
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app }}-pod
+    spec:
+      imagePullSecrets:
+        - name: github-docker-secret
+      containers:
+        - name: chrome-browser
+          image: ghcr.io/waruingugi/{{ .Values.app }}-chrome-browser:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5900
+              name: chrome-browser
+          env:  # Add this block to define the POD_NAME variable
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name  # Dynamically pulls the pod's name
+          envFrom:  # Existing block for environment variables from the secret
+            - secretRef:
+                name: {{ .Values.statefulset.envSecrets.name }}
+          resources:
+            requests:
+              memory: {{ .Values.statefulset.resources.requests.memory }}
+              cpu: {{ .Values.statefulset.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.statefulset.resources.limits.memory }}
+              cpu: {{ .Values.statefulset.resources.limits.cpu }}

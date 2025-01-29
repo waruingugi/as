@@ -1,11 +1,14 @@
-exclude: .*migrations\/.*
+exclude: >
+  (.*migrations/.*)|(k8/workers/templates/.*\.ya?ml$)
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
     hooks:
-      - id: check-yaml
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
+      - id: yamllint
+        args: [
+          "-d",
+          "{extends: default, ignore: k8/workers/templates, rules: {document-start: disable, braces: disable, line-length: {max: 120, level: warning}}}"  # yamllint disable-line
+        ]
 
   # Prevent secrets from being committed
   - repo: https://github.com/gitguardian/ggshield
@@ -37,6 +40,6 @@ repos:
     hooks:
       # Run the linter.
       - id: ruff
-        args: [ --fix ]
+        args: [--fix]
       # Run the formatter.
       - id: ruff-format

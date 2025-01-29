@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: List
+items:
+{{- $appName := .Values.app | default "default-app" }}
+{{- $replicas := .Values.statefulset.replicas | default 3 | int }}
+{{- range $index := untilStep 0 $replicas 1 }}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: {{ $appName }}-svc-{{ $index }}
+      namespace: {{ $appName }}
+    spec:
+      selector:
+        app: {{ $appName }}-pod
+        statefulset.kubernetes.io/pod-name: {{ $appName }}-seed-{{ $index }}
+      ports:
+        - protocol: TCP
+          port: 5900
+          targetPort: 5900
+      type: LoadBalancer
+{{- end }}

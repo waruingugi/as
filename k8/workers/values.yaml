@@ -1,0 +1,56 @@
+# Application-specific configuration
+app: ""  # This will be overridden via --set during helm install (e.g., app=betika)
+
+# Namespace configuration
+namespace: ""  # Set dynamically in templates to match the app name if not provided
+
+# StatefulSet configuration
+statefulset:
+  replicas: 3  # Number of pods in the StatefulSet
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "2"
+  envSecrets:
+    name: chrome-secrets  # Secrets name (populated dynamically in the namespace)
+  podPrefix: "{{ .Values.app }}-seed"  # Prefix for StatefulSet pods
+
+# Service configuration
+services:
+  ports:
+    - name: chrome-browser
+      port: 5900
+      targetPort: 5900
+  servicePrefix: "{{ .Values.app }}-svc"  # Prefix for Service names
+
+# Token Secret Configuration (Super Admin)
+apiTokenSecret:
+  name: pod-restart-token
+  namespace: default  # Always in the default namespace
+
+# Docker Registry Configuration
+dockerRegistry:
+  server: ghcr.io  # Docker registry server (e.g., GitHub Container Registry)
+  username: ""  # Docker registry username (pass via --set or secrets)
+  password: ""  # Docker registry password/token (pass via --set or secrets)
+  email: ""  # Docker registry email (optional but recommended)
+
+# Secrets for Chrome Envs
+secrets:
+  pod0:
+    API_KEY: ""  # API key for pod-0
+    PHONE_NUMBER: ""  # Phone number for pod-0
+    PASSWORD: ""  # Password for pod-0
+  pod1:
+    API_KEY: ""  # API key for pod-1
+    PHONE_NUMBER: ""  # Phone number for pod-1
+    PASSWORD: ""  # Password for pod-1
+  pod2:
+    API_KEY: ""  # API key for pod-2
+    PHONE_NUMBER: ""  # Phone number for pod-2
+    PASSWORD: ""  # Password for pod-2
+  VNC_PASSWORD: ""  # Password for VNC
+  BASE_URL: ""  # Base URL for the application

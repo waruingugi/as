@@ -17,18 +17,33 @@ DEFAULT_CACHE_DURATION: int = 300  # 5 minutes
 PAGE_SIZE: int = 50
 
 
-class BettingApps(str, Enum):
+class BettingApp(str, Enum):
     """Apps tracked by the API"""
 
     BETIKA = "BETIKA"
 
     @staticmethod
     def list():
-        return [app.value for app in BettingApps]
+        return [app.value for app in BettingApp]
 
     @staticmethod
     def choices():
-        return [(app.value, app.value) for app in BettingApps]
+        return [(app.value, app.value) for app in BettingApp]
+
+
+class SubscriptionType(str, Enum):
+    """Payment Subscription Types"""
+
+    BASIC = "BASIC"
+    PRO = "PRO"
+
+    @staticmethod
+    def list():
+        return [sub.value for sub in SubscriptionType]
+
+    @staticmethod
+    def choices():
+        return [(sub.value, sub.value) for sub in SubscriptionType]
 
 
 class CacheKeys:
@@ -42,7 +57,7 @@ class CacheKeys:
     WORKER_CRASH_QUERY = "worker_id:{}:query"
 
 
-class SeedNames(str, Enum):
+class SeedName(str, Enum):
     """Seed name options."""
 
     SEED_00 = "Seed 00"
@@ -51,8 +66,8 @@ class SeedNames(str, Enum):
 
     @staticmethod
     def list():
-        return [seed.value for seed in SeedNames]
+        return [seed.value for seed in SeedName]
 
     @staticmethod
     def choices():
-        return [(seed.value, seed.value) for seed in SeedNames]
+        return [(seed.value, seed.value) for seed in SeedName]

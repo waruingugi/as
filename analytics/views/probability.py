@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 
 from analytics.serializers import WorkerProbabilitySerializer
 from analytics.utils import format_worker_probabilities
-from commons.constants import BettingApps
+from commons.constants import BettingApp
 from commons.errors import ErrorCodes
 from workers.models import Worker
 
@@ -14,7 +14,7 @@ class WorkerProbabilitiesView(APIView):
     serializer_class = WorkerProbabilitySerializer
 
     def get(self, request, app):
-        if app not in BettingApps.list():
+        if app not in BettingApp.list():
             return Response(
                 {"error": ErrorCodes.INVALID_APP_NAME.value},
                 status=status.HTTP_400_BAD_REQUEST,

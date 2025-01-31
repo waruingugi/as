@@ -4,7 +4,7 @@ from collections import defaultdict
 from celery import shared_task
 from django.utils.timezone import now, timedelta
 
-from commons.constants import BettingApps
+from commons.constants import BettingApp
 from commons.logger import logger
 from observers.models import Multiplier
 from orchestrator.utils import find_similar_workers, reboot_worker
@@ -16,7 +16,7 @@ def identify_similar_workers(threshold=0.8) -> None:
     """
     Find workers posting similar payouts and reboot one randomly if necessary.
     """
-    for app in BettingApps.list():
+    for app in BettingApp.list():
         logger.info("Starting task to identify similar workers...")
         # Get workers for the current app
         workers = Worker.objects.filter(app=app).values_list("id", flat=True)

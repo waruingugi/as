@@ -1,11 +1,11 @@
 from rest_framework import serializers
 
-from commons.constants import BettingApps
+from commons.constants import BettingApp
 
 
 class SeedSelectorSerializer(serializers.Serializer):
     app = serializers.ChoiceField(
-        choices=BettingApps.list(),
+        choices=BettingApp.list(),
         required=True,
         error_messages={
             "required": "The 'app' query parameter is required.",

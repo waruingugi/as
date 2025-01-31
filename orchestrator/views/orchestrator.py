@@ -2,7 +2,7 @@
 # from rest_framework.response import Response
 # from rest_framework.views import APIView
 
-# from commons.constants import CacheKeys, SeedNames
+# from commons.constants import CacheKeys, SeedName
 # from orchestrator.serializers import SeedSelectorSerializer
 
 
@@ -32,8 +32,8 @@
 #         cache.set(cache_key, current_request_count, timeout=60 * 60 * 24 * 365)
 
 #         # Calculate the next seed index
-#         seed_index = (current_request_count - 1) % len(SeedNames.list())
-#         next_seed = SeedNames.list()[seed_index]
+#         seed_index = (current_request_count - 1) % len(SeedName.list())
+#         next_seed = SeedName.list()[seed_index]
 
 #         # Return the seed value
 #         return Response({"seed": next_seed})

@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from analytics.constants import CrashesToMonitor
 from analytics.utils import format_worker_probabilities
-from commons.constants import BettingApps, SeedNames
+from commons.constants import BettingApp, SeedName
 from workers.models import Worker
 
 
@@ -12,7 +12,7 @@ class TestFormatWorkerProbabilities(TestCase):
     def setUp(self) -> None:
         # Create a mock worker
         self.worker = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name=SeedNames.SEED_00.value
+            app=BettingApp.BETIKA.value, name=SeedName.SEED_00.value
         )
 
     @patch("analytics.services.Probability.calculate_probability")

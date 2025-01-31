@@ -5,7 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from commons.constants import BettingApps, SeedNames
+from commons.constants import BettingApp, SeedName
 from commons.errors import ErrorCodes
 from commons.tests.test_base import UserBaseAPITestCase
 from observers.models import Multiplier
@@ -17,7 +17,7 @@ class MultiplierCreateViewTests(APITestCase):
         self.client = APIClient()
         self.create_url = reverse("multipliers:create")
         self.worker = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name=SeedNames.list()[0], key=uuid4().hex
+            app=BettingApp.BETIKA.value, name=SeedName.list()[0], key=uuid4().hex
         )
         self.valid_data = {"multipliers": [1.32, 1.41, 2.09, 3.12]}
 
@@ -113,7 +113,7 @@ class MultiplierCreateViewTests(APITestCase):
 class MultiplierListViewTests(UserBaseAPITestCase):
     def setUp(self) -> None:
         self.worker = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name=SeedNames.list()[0], key=uuid4().hex
+            app=BettingApp.BETIKA.value, name=SeedName.list()[0], key=uuid4().hex
         )
         self.multiplier_1 = Multiplier.objects.create(worker=self.worker, crash=1.51)
         self.multiplier_2 = Multiplier.objects.create(worker=self.worker, crash=2.55)
@@ -142,7 +142,7 @@ class MultiplierListViewTests(UserBaseAPITestCase):
 
     def test_filtering(self):
         """Test filtering on the 'app' field."""
-        response = self.client.get(f"{self.url}?app={BettingApps.BETIKA.value}")
+        response = self.client.get(f"{self.url}?app={BettingApp.BETIKA.value}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 2)  # No matches
 
@@ -163,14 +163,14 @@ class MultiplierListViewTests(UserBaseAPITestCase):
 
 class TestWorkerHistoryView(UserBaseAPITestCase):
     def setUp(self) -> None:
-        self.app_name = BettingApps.BETIKA.value
+        self.app_name = BettingApp.BETIKA.value
 
         # Create workers and multipliers
         self.worker1 = Worker.objects.create(
-            app=self.app_name, name=SeedNames.SEED_00.value
+            app=self.app_name, name=SeedName.SEED_00.value
         )
         self.worker2 = Worker.objects.create(
-            app=self.app_name, name=SeedNames.SEED_01.value
+            app=self.app_name, name=SeedName.SEED_01.value
         )
 
         self.multipliers_worker1 = [

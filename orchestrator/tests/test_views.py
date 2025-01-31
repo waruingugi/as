@@ -3,7 +3,7 @@
 # from rest_framework import status
 # from rest_framework.test import APIClient, APITestCase
 
-# from commons.constants import BettingApps, CacheKeys, SeedNames
+# from commons.constants import BettingApp, CacheKeys, SeedName
 
 
 # class SeedSelectorAPITest(APITestCase):
@@ -14,11 +14,11 @@
 #             "orchestrator:seed-selector"
 #         )  # Ensure the URL name matches your `urls.py`
 #         self.betting_app = (
-#             BettingApps.BETIKA.value
-#         )  # Replace with the appropriate value from `BettingApps`
+#             BettingApp.BETIKA.value
+#         )  # Replace with the appropriate value from `BettingApp`
 
 #         # Seed values for verification
-#         self.seed_values = SeedNames.list()
+#         self.seed_values = SeedName.list()
 
 #     def tearDown(self):
 #         # Clear the cache after each test

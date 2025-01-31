@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             model_name="worker",
             name="app",
             field=models.CharField(
-                choices=[(commons.constants.BettingApps["BETIKA"], "BETIKA")],
+                choices=[(commons.constants.BettingApp["BETIKA"], "BETIKA")],
                 max_length=255,
             ),
         ),

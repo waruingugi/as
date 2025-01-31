@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from commons.constants import SeedNames
+from commons.constants import SeedName
 from commons.utils import generate_uuid
 from workers.models import Worker
 
@@ -14,7 +14,7 @@ class WorkerBaseSerializer(serializers.ModelSerializer):
 
 
 class WorkerCreateSerializer(WorkerBaseSerializer):
-    name = serializers.ChoiceField(choices=SeedNames.list(), required=True)
+    name = serializers.ChoiceField(choices=SeedName.list(), required=True)
 
     class Meta(WorkerBaseSerializer.Meta):
         read_only_fields = ("id", "created_at", "updated_at")

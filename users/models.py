@@ -60,6 +60,9 @@ class User(AbstractBaseUser, PermissionsMixin, Base):
     USERNAME_FIELD: str = "phone_number"
     REQUIRED_FIELDS: list[str] = []  # type: ignore
 
+    class Meta:
+        ordering = ("-created_at",)
+
     def __str__(self) -> str:
         return str(self.phone_number)
 
@@ -67,5 +70,14 @@ class User(AbstractBaseUser, PermissionsMixin, Base):
     def phone(self) -> str:
         return str(self.phone_number)
 
-    class Meta:
-        ordering = ("-created_at",)
+    @property
+    def has_active_subscription(self) -> bool:
+        return self.subscription.is_active() if hasattr(self, "subscription") else False  # type: ignore
+
+    @property
+    def subscription_type(self) -> str:
+        return (
+            self.subscription.subscription_type
+            if hasattr(self, "subscription")
+            else "none"
+        )  # type: ignore

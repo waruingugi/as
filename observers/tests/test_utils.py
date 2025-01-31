@@ -4,7 +4,7 @@ from uuid import uuid4
 from django.core.cache import cache
 from django.test import TestCase
 
-from commons.constants import DEFAULT_CACHE_DURATION, BettingApps, CacheKeys, SeedNames
+from commons.constants import DEFAULT_CACHE_DURATION, BettingApp, CacheKeys, SeedName
 from observers.models import Multiplier
 from observers.utils import (
     get_new_multipliers,
@@ -19,7 +19,7 @@ class GetNewMultipliersTestCase(TestCase):
     def setUpClass(cls) -> None:
         cls.multipliers_list = [1.21, 4.33, 1.18]
         cls.worker = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name=SeedNames.list()[0], key=uuid4()
+            app=BettingApp.BETIKA.value, name=SeedName.list()[0], key=uuid4()
         )
 
     @classmethod
@@ -53,7 +53,7 @@ class GetNewMultipliersTestCase(TestCase):
 class TestGetWorkerCrashList(TestCase):
     def setUp(self) -> None:
         self.worker = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name=SeedNames.SEED_00.value
+            app=BettingApp.BETIKA.value, name=SeedName.SEED_00.value
         )
         self.multipliers = [
             Multiplier.objects.create(worker=self.worker, crash=15.5),
@@ -69,7 +69,7 @@ class TestGetWorkerCrashList(TestCase):
 
     def test_get_worker_crash_list_empty_worker(self) -> None:
         empty_worker = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name=SeedNames.SEED_01.value
+            app=BettingApp.BETIKA.value, name=SeedName.SEED_01.value
         )
         result = get_worker_crash_list(empty_worker.id, count=2)  # type: ignore
         self.assertEqual(result, [])
@@ -78,10 +78,10 @@ class TestGetWorkerCrashList(TestCase):
 class TestGetWorkersCrashHistory(TestCase):
     def setUp(self) -> None:
         self.worker1 = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name=SeedNames.SEED_00.value
+            app=BettingApp.BETIKA.value, name=SeedName.SEED_00.value
         )
         self.worker2 = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name=SeedNames.SEED_01.value
+            app=BettingApp.BETIKA.value, name=SeedName.SEED_01.value
         )
 
         self.multipliers_worker1 = [
@@ -103,7 +103,7 @@ class TestGetWorkersCrashHistory(TestCase):
         ]
 
         result = get_workers_crash_history(
-            app=BettingApps.BETIKA.value, count=1, recompute=True
+            app=BettingApp.BETIKA.value, count=1, recompute=True
         )
         self.assertEqual(len(result), 2)
         self.assertIn(self.worker1.id, [result[0]["id"], result[1]["id"]])
@@ -126,7 +126,7 @@ class TestGetWorkersCrashHistory(TestCase):
         )
 
         result = get_workers_crash_history(
-            app=BettingApps.BETIKA.value, count=1, recompute=False
+            app=BettingApp.BETIKA.value, count=1, recompute=False
         )
         self.assertEqual(len(result), 2)
         self.assertEqual(

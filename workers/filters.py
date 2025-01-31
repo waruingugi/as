@@ -1,12 +1,12 @@
 from django_filters import FilterSet, filters
 
-from commons.constants import BettingApps
+from commons.constants import BettingApp
 from workers.models import Worker
 
 
 class WorkerFilter(FilterSet):
-    # Filter for 'app' field using the BettingApps Enum
-    app = filters.ChoiceFilter(choices=BettingApps.choices())
+    # Filter for 'app' field using the BettingApp Enum
+    app = filters.ChoiceFilter(choices=BettingApp.choices())
 
     class Meta:
         model = Worker

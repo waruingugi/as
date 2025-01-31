@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from django.test import TestCase
 
-from commons.constants import BettingApps, SeedNames
+from commons.constants import BettingApp, SeedName
 from observers.models import Multiplier
 from workers.models import Worker
 
@@ -11,7 +11,7 @@ class MultiplierModelTests(TestCase):
     def setUp(self) -> None:
         # Create a Worker instance
         self.worker = Worker.objects.create(
-            app=BettingApps.BETIKA.value, name=SeedNames.list()[0], key=uuid4().hex
+            app=BettingApp.BETIKA.value, name=SeedName.list()[0], key=uuid4().hex
         )
 
         # Create Multiplier instances

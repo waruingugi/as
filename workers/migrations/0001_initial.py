@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
                 (
                     "name",
                     models.CharField(
-                        choices=[(commons.constants.BettingApps["BETIKA"], "BETIKA")],
+                        choices=[(commons.constants.BettingApp["BETIKA"], "BETIKA")],
                         max_length=255,
                     ),
                 ),

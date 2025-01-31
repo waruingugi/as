@@ -182,29 +182,12 @@ helm uninstall <release-name> --keep-history
 This will delete all resources in the app's namespace.
 
 ## Notes
-We use new relic  OR betterstack(a simpler approach) to monitor our k8s. 
-Please follow instruction in new relic dashboard, these are just sample commands.
-
-#### Install new-relic to monitor k8
+We use betterstack to monitor our k8s (remember to use the disable TLS installation version). 
+### Handy commands that may save you errors are:
 ```
-helm upgrade --install newrelic-bundle ./nri-bundle \
-  --namespace=newrelic \
-  --create-namespace \
-  --set global.licenseKey=<> \
-  --set global.cluster=<>
+kubectl annotate apiservice v1beta1.metrics.k8s.io   meta.helm.sh/release-name=betterstack-logs   meta.helm.sh/release-namespace=default --overwrite
 ```
 
-#### To update new relic configuration, see `values.yaml` in `k8/nri-bundle`:
 ```
-helm repo add newrelic https://helm-charts.newrelic.com && helm repo update && kubectl create namespace newrelic ; helm upgrade --install newrelic-bundle newrelic/nri-bundle -n newrelic --values values.yaml
-```
-
-#### To apply APM use:
-```
-kubectl apply -f instrumentation.yaml -n newrelic
-```
-
-#### After install APM, remember to restart pods in all namespaces:
-```
-kubectl rollout restart statefulset betika-seed -n betika
+kubectl label apiservice v1beta1.metrics.k8s.io   app.kubernetes.io/managed-by=Helm --overwrite
 ```

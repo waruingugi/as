@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "workers",
     "orchestrator",
     "analytics",
+    "accounts",
 ]
 
 MIDDLEWARE = [

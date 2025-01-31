@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from commons.constants import BettingApps, SeedNames
+from commons.constants import BettingApp, SeedName
 from commons.tests.test_base import UserBaseAPITestCase
 from workers.models import Worker
 
@@ -12,15 +12,15 @@ from workers.models import Worker
 class TestWorkerProbabilitiesView(UserBaseAPITestCase):
     def setUp(self) -> None:
         self.client = APIClient()
-        self.valid_app_name = BettingApps.BETIKA.value
+        self.valid_app_name = BettingApp.BETIKA.value
         self.invalid_app_name = "INVALID_APP"
 
         # Create mock workers
         self.worker1 = Worker.objects.create(
-            app=self.valid_app_name, name=SeedNames.SEED_00.value
+            app=self.valid_app_name, name=SeedName.SEED_00.value
         )
         self.worker2 = Worker.objects.create(
-            app=self.valid_app_name, name=SeedNames.SEED_01.value
+            app=self.valid_app_name, name=SeedName.SEED_01.value
         )
 
         self.url = reverse("probabilities:detail", args=[self.valid_app_name])

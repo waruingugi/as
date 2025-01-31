@@ -3,7 +3,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from commons.constants import BettingApps
+from commons.constants import BettingApp
 from commons.errors import ErrorCodes
 from observers.serializers import WorkerHistorySerializer
 from observers.utils import get_workers_crash_history
@@ -20,7 +20,7 @@ class WorkerHistoryView(APIView):
 
     def get(self, request, app):
         # Validate app_name
-        if app not in BettingApps.list():
+        if app not in BettingApp.list():
             return Response(
                 {"error": ErrorCodes.INVALID_APP_NAME.value},
                 status=status.HTTP_400_BAD_REQUEST,

@@ -2,6 +2,8 @@ from enum import Enum
 
 from django.contrib.auth import get_user_model
 
+from notifications.sms import HostPinnacleSMS
+
 # Model Constants
 User = get_user_model()
 
@@ -71,3 +73,22 @@ class SeedName(str, Enum):
     @staticmethod
     def choices():
         return [(seed.value, seed.value) for seed in SeedName]
+
+
+class SMSProvider(Enum):
+    """Predefined SMS providers as single instances."""
+
+    HostPinnacle = HostPinnacleSMS  # Default provider
+
+    @staticmethod
+    def list() -> list:
+        """Returns providers sorted by priority for automatic fallback handling."""
+        return sorted(
+            [provider.value for provider in SMSProvider], key=lambda p: p.priority
+        )
+
+
+class NotificationType(str, Enum):
+    OTP = "OTP"
+    MARKETING = "MARKETING"
+    DEPOSIT = "DEPOSIT"

@@ -3,7 +3,17 @@ import logging.config
 import os
 from functools import lru_cache
 
-# Configure logging to use both Console & Better Stack
+from django.conf import settings
+
+# Determine if we are in development mode (DEBUG=1)
+DEBUG_MODE = getattr(settings, "DEBUG", False)
+
+# Configure logging to use Console in Dev and Logtail in Production
+log_handlers = ["console"]  # Default to console logging
+
+if not DEBUG_MODE:  # Only add Logtail if not in DEBUG mode
+    log_handlers.append("logtail")
+
 logging.config.dictConfig(
     {
         "version": 1,
@@ -22,10 +32,8 @@ logging.config.dictConfig(
             },
             "logtail": {
                 "class": "logtail.LogtailHandler",
-                "source_token": os.environ["LOGTAIL_TOKEN"],
-                "host": os.environ[
-                    "LOGTAIL_HOST"
-                ],  # Force the correct ingestion endpoint
+                "source_token": os.getenv("LOGTAIL_TOKEN", ""),
+                "host": os.getenv("LOGTAIL_HOST", ""),
                 "level": logging.INFO,
                 "formatter": "json",
             },
@@ -33,7 +41,7 @@ logging.config.dictConfig(
         "loggers": {
             "": {
                 "level": "INFO",
-                "handlers": ["console", "logtail"],
+                "handlers": log_handlers,  # Dynamically apply handlers
             },
         },
     }

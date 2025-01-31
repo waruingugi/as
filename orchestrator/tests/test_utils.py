@@ -2,6 +2,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
+from django.test import override_settings
 
 from orchestrator.utils import (
     calculate_jaccard_similarity,
@@ -113,14 +114,9 @@ class TestRebootWorker(TestCase):
 
     @patch("orchestrator.utils.Worker.objects.get")
     @patch("orchestrator.utils.requests.delete")
-    @patch("orchestrator.utils.os.getenv")
-    def test_successful_pod_reboot(self, mock_getenv, mock_delete, mock_get) -> None:
-        # Mock environment variables
-        mock_getenv.side_effect = lambda key: {
-            "KUBERNETES_API_BASE_URL": "https://63.150.79.21:443",
-            "KUBERNETES_TOKEN": "mock_token",
-        }.get(key)
-
+    @override_settings(KUBERNETES_API_BASE_URL="https://63.150.79.21:443")
+    @override_settings(KUBERNETES_TOKEN="mock_token")
+    def test_successful_pod_reboot(self, mock_delete, mock_get) -> None:
         # Mock worker object
         worker_mock = MagicMock()
         worker_mock.name = "Seed 00"
@@ -144,14 +140,9 @@ class TestRebootWorker(TestCase):
 
     @patch("orchestrator.utils.Worker.objects.get")
     @patch("orchestrator.utils.requests.delete")
-    @patch("orchestrator.utils.os.getenv")
-    def test_failed_api_request(self, mock_getenv, mock_delete, mock_get) -> None:
-        # Mock environment variables
-        mock_getenv.side_effect = lambda key: {
-            "KUBERNETES_API_BASE_URL": "https://63.150.79.21:443",
-            "KUBERNETES_TOKEN": "mock_token",
-        }.get(key)
-
+    @override_settings(KUBERNETES_API_BASE_URL="https://63.150.79.21:443")
+    @override_settings(KUBERNETES_TOKEN="mock_token")
+    def test_failed_api_request(self, mock_delete, mock_get) -> None:
         # Mock worker object
         worker_mock = MagicMock()
         worker_mock.name = "Seed 01"

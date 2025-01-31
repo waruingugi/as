@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 
 import requests
+from django.conf import settings
 from django.core.cache import cache
 
 from commons.constants import CacheKeys
@@ -72,8 +73,8 @@ def reboot_worker(worker_id) -> None:
             pod_name = f"{app_name}-seed-{seed_number}"
 
             # Fetch Kubernetes API base URL and token from environment variables
-            kubernetes_base_url = os.getenv("KUBERNETES_API_BASE_URL")
-            kubernetes_token = os.getenv("KUBERNETES_TOKEN")
+            kubernetes_base_url = settings.KUBERNETES_API_BASE_URL
+            kubernetes_token = settings.KUBERNETES_TOKEN
 
             # Construct the request URL
             url = f"{kubernetes_base_url}/api/v1/namespaces/{app_name}/pods/{pod_name}"

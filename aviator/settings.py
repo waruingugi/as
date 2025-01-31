@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "orchestrator",
     "analytics",
     "accounts",
+    "notifications",
 ]
 
 MIDDLEWARE = [
@@ -194,8 +195,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_THROTTLE_RATES": {
         "authentication_throttle": "5/hour",
-        "mpesa_stkpush_throttle": "3/minute",
-        "mpesa_withdrawal_throttle": "1/minute",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "commons.pagination.StandardPageNumberPagination",
@@ -220,6 +219,10 @@ HOST_PINNACLE_SENDER_ID = os.environ["HOST_PINNACLE_SENDER_ID"]
 # K8s
 KUBERNETES_API_BASE_URL = os.environ["KUBERNETES_API_BASE_URL"]
 KUBERNETES_TOKEN = os.environ["KUBERNETES_TOKEN"]
+
+# One Signal
+ONESIGNAL_APP_ID = os.environ["ONESIGNAL_APP_ID"]
+ONESIGNAL_API_KEY = os.environ["ONESIGNAL_API_KEY"]
 
 
 # DRF Spectacular Settings for Swagger

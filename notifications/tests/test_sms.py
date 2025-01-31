@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
-from commons.constants import NotificationType
+from notifications.constants import NotificationType
 from notifications.sms import HostPinnacle
 
 
@@ -14,7 +14,9 @@ class TestHostPinnacleSMS(TestCase):
 
         provider = HostPinnacle()
         success = provider.send_sms(
-            "+254712345678", NotificationType.MARKETING.value, "Test message"
+            phone_number="+254712345678",
+            type=NotificationType.MARKETING.value,
+            message="Test message",
         )
 
         self.assertTrue(success)
@@ -27,7 +29,9 @@ class TestHostPinnacleSMS(TestCase):
 
         provider = HostPinnacle()
         success = provider.send_sms(
-            "+254712345678", NotificationType.MARKETING.value, "Test failure"
+            phone_number="+254712345678",
+            type=NotificationType.MARKETING.value,
+            message="Test failure",
         )
 
         self.assertFalse(success)

@@ -11,7 +11,7 @@ class Subscription(models.Model):
     subscription_type = models.CharField(
         max_length=10,
         choices=SubscriptionType.choices(),
-        default=SubscriptionType.BASIC,
+        default=SubscriptionType.PRO,
     )
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField()

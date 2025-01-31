@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                     "subscription_type",
                     models.CharField(
                         choices=[("BASIC", "BASIC"), ("PRO", "PRO")],
-                        default=commons.constants.SubscriptionType["BASIC"],
+                        default=commons.constants.SubscriptionType["PRO"],
                         max_length=10,
                     ),
                 ),

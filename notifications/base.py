@@ -26,7 +26,7 @@ class NotificationFacade:
         """Attempt sending SMS, retrying if necessary."""
         for attempt in range(1, self.MAX_RETRIES + 1):
             logger.info(f"Attempt {attempt} using {provider.__class__.__name__}...")
-            if provider.send_sms(phone_number, message, type):
+            if provider.send_sms(phone_number=phone_number, message=message, type=type):
                 logger.info(
                     f"Success with {provider.__class__.__name__} on attempt {attempt}"
                 )

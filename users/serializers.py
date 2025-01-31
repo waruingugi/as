@@ -5,8 +5,14 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from commons.errors import ErrorCodes
 from commons.serializers import UserPhoneNumberField
+from users.constants import TOTP_LENGTH
 from users.models import User
-from users.validators import PhoneNumberIsAvailableValidator, UsernameValidator
+from users.validators import (
+    OTPValidator,
+    PhoneNumberExistsValidator,
+    PhoneNumberIsAvailableValidator,
+    UsernameValidator,
+)
 
 
 class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -158,3 +164,50 @@ class UserListSerializer(BaseUserDetailSerializer):
             "is_verified",
             "is_staff",
         ]
+
+
+class ResendOTPVerificationSerializer(serializers.Serializer):
+    phone_number = UserPhoneNumberField(
+        required=True, validators=[PhoneNumberExistsValidator()]
+    )
+
+    def validate(self, data):
+        user = User.objects.get(phone_number=data["phone_number"])
+        if user.is_verified:
+            raise serializers.ValidationError(ErrorCodes.USER_IS_VERIFIED.value)
+        return data
+
+
+class OTPVerificationSerializer(serializers.Serializer):
+    phone_number = UserPhoneNumberField(
+        required=True, validators=[PhoneNumberExistsValidator()]
+    )
+    otp = serializers.CharField(required=True, max_length=TOTP_LENGTH)
+
+    def validate(self, data):
+        OTPValidator.validate_otp(
+            phone_number=data.get("phone_number"), otp_code=data.get("otp")
+        )
+        return data
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    phone_number = UserPhoneNumberField(
+        required=True, validators=[PhoneNumberExistsValidator()]
+    )
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    phone_number = UserPhoneNumberField(
+        required=True, validators=[PhoneNumberExistsValidator()]
+    )
+    otp = serializers.CharField(required=True)
+    new_password = serializers.CharField(
+        required=True, write_only=True, validators=[validate_password]
+    )
+
+    def validate(self, data):
+        OTPValidator.validate_otp(
+            phone_number=data.get("phone_number"), otp_code=data.get("otp")
+        )
+        return data

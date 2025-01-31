@@ -2,6 +2,7 @@ from enum import Enum
 
 from django.contrib.auth import get_user_model
 
+from notifications.push import OneSignal
 from notifications.sms import HostPinnacleSMS
 
 # Model Constants
@@ -36,7 +37,6 @@ class BettingApp(str, Enum):
 class SubscriptionType(str, Enum):
     """Payment Subscription Types"""
 
-    BASIC = "BASIC"
     PRO = "PRO"
 
     @staticmethod
@@ -75,6 +75,9 @@ class SeedName(str, Enum):
         return [(seed.value, seed.value) for seed in SeedName]
 
 
+PUSH_PROVIDERS = [OneSignal]
+
+
 class SMSProvider(Enum):
     """Predefined SMS providers as single instances."""
 
@@ -88,7 +91,11 @@ class SMSProvider(Enum):
         )
 
 
-class NotificationType(str, Enum):
-    OTP = "OTP"
-    MARKETING = "MARKETING"
-    DEPOSIT = "DEPOSIT"
+class Message(str, Enum):
+    OTP_SMS = "Your Aviator Signals verification code is {}."
+
+
+class PushNotification:
+    class WELCOME_MESSAGE:
+        title = "Welcome to Aviator Signals"
+        message = "Hello and welcome to Aviator Signals! Please choose a subscription plan to unlock the app."

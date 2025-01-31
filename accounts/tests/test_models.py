@@ -18,12 +18,12 @@ class SubscriptionModelTest(TestCase):
         """Ensure a subscription can be created successfully."""
         subscription = Subscription.objects.create(
             user=self.user,
-            subscription_type=SubscriptionType.BASIC,
+            subscription_type=SubscriptionType.PRO,
             end_date=now() + timedelta(days=30),
         )
 
         self.assertEqual(subscription.user, self.user)
-        self.assertEqual(subscription.subscription_type, SubscriptionType.BASIC)
+        self.assertEqual(subscription.subscription_type, SubscriptionType.PRO)
         self.assertTrue(subscription.is_active())
 
     def test_subscription_expires_correctly(self) -> None:
@@ -38,7 +38,7 @@ class SubscriptionModelTest(TestCase):
 
         active_subscription = Subscription.objects.create(
             user=self.user,
-            subscription_type=SubscriptionType.BASIC,
+            subscription_type=SubscriptionType.PRO,
             end_date=now() + timedelta(days=5),  # Still valid
         )
         self.assertTrue(active_subscription.is_active())
@@ -47,7 +47,7 @@ class SubscriptionModelTest(TestCase):
         """Ensure renewing a subscription extends the expiration date."""
         subscription = Subscription.objects.create(
             user=self.user,
-            subscription_type=SubscriptionType.BASIC,
+            subscription_type=SubscriptionType.PRO,
             end_date=now() + timedelta(days=30),
         )
 
@@ -77,7 +77,7 @@ class SubscriptionModelTest(TestCase):
         """Ensure has_active_subscription updates correctly when a subscription expires."""
         subscription = Subscription.objects.create(
             user=self.user,
-            subscription_type=SubscriptionType.BASIC,
+            subscription_type=SubscriptionType.PRO,
             end_date=now() + timedelta(days=1),
         )
 

@@ -19,3 +19,5 @@ class ErrorCodes(str, Enum):
     INVALID_WORKER_API_KEY = "Invalid or expired worker API key"
     INVALID_APP_NAME = "Invalid app name."
     WORKERS_NOT_FOUND = "No workers found for the specified app."
+    PHONE_NUMBER_EXISTS = "This phone number is already taken."
+    INVALID_OTP = "The OTP entered is incorrect. Please try again"

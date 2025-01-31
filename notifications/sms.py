@@ -47,7 +47,7 @@ class HostPinnacle(SMSProvider):
         parsed_phone = parse(phone)
         return f"{parsed_phone.country_code}{parsed_phone.national_number}"
 
-    def send_sms(self, phone_number: str, type: str, message: str) -> bool:
+    def send_sms(self, *, phone_number: str, type: str, message: str) -> bool:
         logger.info(f"Sending {type} SMS to {phone_number}...")
         self.sms_payload["mobile"] = self.format_phone_number(phone_number)
         self.sms_payload["msg"] = message

@@ -2,8 +2,9 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
-from commons.constants import NotificationType, SMSProvider
+from commons.constants import SMSProvider
 from notifications.base import Notification
+from notifications.constants import NotificationType
 
 
 class TestNotification(TestCase):

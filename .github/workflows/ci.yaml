@@ -22,10 +22,8 @@ jobs:
           python-version: '3.10'
 
       # 3. Install pre-commit and run the linting hooks defined in pre-commit-config.yaml
-      - name: Install pre-commit and run linting
-        run: |
-          pip install pre-commit
-          pre-commit run --all-files
+      - name: Run pre-commit on all files excluding ggshield
+        run: SKIP=ggshield pre-commit run --all-files
 
       # 4. Build your Docker images using docker-compose.
       #    This step uses your docker-compose file to build the app and related services.

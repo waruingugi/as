@@ -60,7 +60,6 @@ jobs:
                 POSTGRES_HOST: "host.docker.internal"
                 SECRET_KEY: "${{ secrets.SECRET_KEY }}"
                 DEBUG: 0
-                DEBUG: 0
                 REDIS_URL: "redis://redis:6379"
                 KUBERNETES_TOKEN: ""
                 KUBERNETES_API_BASE_URL: ""

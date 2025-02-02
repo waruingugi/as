@@ -9,6 +9,11 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
     services:
       postgres:
         image: postgres
@@ -23,7 +28,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
       redis:
         image: redis
         ports:
@@ -47,49 +51,12 @@ jobs:
           pip install pre-commit
           SKIP=ggshield pre-commit run --all-files
 
-      - name: Create docker-compose override for CI
-        run: |
-          cat << 'EOF' > docker-compose.override.yml
-          version: "3.9"
-          services:
-            app:
-              environment:
-                POSTGRES_USER: "${{ secrets.POSTGRES_USER }}"
-                POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
-                POSTGRES_DB: "${{ secrets.POSTGRES_DB }}"
-                POSTGRES_HOST: "host.docker.internal"
-                SECRET_KEY: "${{ secrets.SECRET_KEY }}"
-                DEBUG: 0
-                REDIS_URL: "redis://host.docker.internal:6379"
-                DATABASE_URL: ""
-                KUBERNETES_TOKEN: ""
-                KUBERNETES_API_BASE_URL: ""
-                REBOOT_WORKERS: 1
-                NEW_RELIC_LICENSE: ""
-                LOGTAIL_TOKEN: ""
-                LOGTAIL_HOST: ""
-                HOST_PINNACLE_USER_ID: ""
-                HOST_PINNACLE_PASSWORD: ""
-                HOST_PINNACLE_SENDER_ID: ""
-                ONESIGNAL_APP_ID: ""
-                ONESIGNAL_API_KEY: ""
-              extra_hosts:
-                - "host.docker.internal:host-gateway"
-            celery_worker:
-              extra_hosts:
-                - "host.docker.internal:host-gateway"
-            celery_beat:
-              extra_hosts:
-                - "host.docker.internal:host-gateway"
-          EOF
-
       - name: Build Docker images
-        working-directory: ${{ github.workspace }}
-        run: docker compose -f docker/docker-compose.yml -f docker-compose.override.yml up --build -d
+        run: docker compose -f docker/docker-compose.yml -f docker-compose.ci.override.yml up --build -d
 
       - name: Run tests in Docker container
-        run: docker compose -f docker/docker-compose.yml -f docker-compose.override.yml run --rm app python manage.py test
+        run: docker compose -f docker/docker-compose.yml -f docker-compose.ci.override.yml run --rm app python manage.py test
 
       - name: Tear down Docker Compose services
         if: "always()"
-        run: docker compose -f docker/docker-compose.yml -f docker-compose.override.yml down
+        run: docker compose -f docker/docker-compose.yml -f docker-compose.ci.override.yml down

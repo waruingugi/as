@@ -36,7 +36,7 @@ services:
       dockerfile: ./docker/Dockerfile
     networks:
       - aviator-backend-network
-    command: celery -A aviator.celery  -l info
+    command: celery -A aviator.celery -l info
     volumes:
       - .:/data
     depends_on:
@@ -46,5 +46,5 @@ volumes:
   db_data:
 
 networks:
-  majibu-backend-network:
-    name: as-backend-network
+  aviator-backend-network:
+    name: aviator-backend-network

@@ -9,37 +9,41 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
-
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ${{ secrets.POSTGRES_USER }}"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
-      # 1. Checkout your repository code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up Python 3.10 (needed for running pre-commit)
       - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      # 3. Install pre-commit and run the linting hooks defined in pre-commit-config.yaml
       - name: Install pre-commit and run linting
         run: |
           pip install pre-commit
           SKIP=ggshield pre-commit run --all-files
 
-      # 4. Build your Docker images using docker-compose.
-      #    This step uses your docker-compose file to build the app and related services.
       - name: Build Docker images
         working-directory: ${{ github.workspace }}
         run: docker compose -f docker/docker-compose.yml up --build
 
-      # 5. Run tests using docker-compose.
-      #    Here we override the app container’s default command by running "pytest".
-      #    Adjust this command if your tests are executed differently.
       - name: Run tests in Docker container
         run: docker-compose run --rm app python manage.py test
 
-      # 6. Tear down docker-compose containers (runs regardless of test outcome)
       - name: Tear down Docker Compose services
         if: always()
         run: docker-compose down

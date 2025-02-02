@@ -70,6 +70,8 @@ jobs:
                 HOST_PINNACLE_USER_ID: ""
                 HOST_PINNACLE_PASSWORD: ""
                 HOST_PINNACLE_SENDER_ID: ""
+                ONESIGNAL_APP_ID: ""
+                ONESIGNAL_API_KEY: ""
               extra_hosts:
                 - "host.docker.internal:host-gateway"
             celery_worker:

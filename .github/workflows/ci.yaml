@@ -2,7 +2,7 @@ name: Aviator Signals CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [master, ci]
   pull_request:
     branches: [main]
 

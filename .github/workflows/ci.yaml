@@ -42,7 +42,12 @@ jobs:
         run: docker compose -f docker/docker-compose.yml up --build
 
       - name: Run tests in Docker container
-        run: docker-compose run --rm app python manage.py test
+        run: docker-compose run --rm \
+          -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+          -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+          -e POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+          -e POSTGRES_HOST=postgres \
+          app python manage.py test
 
       - name: Tear down Docker Compose services
         if: always()

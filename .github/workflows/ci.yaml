@@ -2,9 +2,7 @@ name: Aviator Signals CI/CD Pipeline
 
 on:
   push:
-    branches: [master, ci]
-  pull_request:
-    branches: [main]
+    branches: [ci]
 
 jobs:
   run-test:
@@ -72,10 +70,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Get Branch Name
-        id: branch_name
-        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
       - name: Log in to GHCR
         uses: docker/login-action@v3

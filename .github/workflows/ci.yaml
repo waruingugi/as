@@ -48,7 +48,8 @@ jobs:
                 POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
                 POSTGRES_DB: "${{ secrets.POSTGRES_DB }}"
                 POSTGRES_HOST: "host.docker.internal"
-                POSTGRES_DB: "${{ secrets.SECRET_KEY }}"
+                SECRET_KEY: "${{ secrets.SECRET_KEY }}"
+                DEBUG: 0
               extra_hosts:
                 - "host.docker.internal:host-gateway"
             celery_worker:

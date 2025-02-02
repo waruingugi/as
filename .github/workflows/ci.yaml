@@ -19,7 +19,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready"
+          --health-cmd "pg_isready -U ${{ secrets.POSTGRES_USER }}"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -37,18 +37,38 @@ jobs:
           pip install pre-commit
           SKIP=ggshield pre-commit run --all-files
 
+      - name: Create docker-compose override for CI
+        run: |
+          cat << 'EOF' > docker-compose.override.yml
+          version: "3.9"
+          services:
+            app:
+              environment:
+                POSTGRES_USER: "${{ secrets.POSTGRES_USER }}"
+                POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
+                POSTGRES_DB: "${{ secrets.POSTGRES_DB }}"
+                POSTGRES_HOST: "postgres"
+            celery_worker:
+              environment:
+                POSTGRES_USER: "${{ secrets.POSTGRES_USER }}"
+                POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
+                POSTGRES_DB: "${{ secrets.POSTGRES_DB }}"
+                POSTGRES_HOST: "postgres"
+            celery_beat:
+              environment:
+                POSTGRES_USER: "${{ secrets.POSTGRES_USER }}"
+                POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
+                POSTGRES_DB: "${{ secrets.POSTGRES_DB }}"
+                POSTGRES_HOST: "postgres"
+          EOF
+
       - name: Build Docker images
         working-directory: ${{ github.workspace }}
-        run: docker compose -f docker/docker-compose.yml up --build
+        run: docker compose -f docker/docker-compose.yml -f docker-compose.override.yml up --build -d
 
       - name: Run tests in Docker container
-        run: docker-compose run --rm \
-          -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-          -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-          -e POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
-          -e POSTGRES_HOST=postgres \
-          app python manage.py test
+        run: docker compose -f docker/docker-compose.yml -f docker-compose.override.yml run --rm app python manage.py test
 
       - name: Tear down Docker Compose services
-        if: always()
-        run: docker-compose down
+        if: "always()"
+        run: docker compose -f docker/docker-compose.yml -f docker-compose.override.yml down

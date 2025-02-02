@@ -52,11 +52,11 @@ jobs:
           SKIP=ggshield pre-commit run --all-files
 
       - name: Build Docker images
-        run: docker compose -f docker/docker-compose.yml -f docker-compose.ci.override.yml up --build -d
+        run: docker compose -f docker/docker-compose.yml -f docker/docker-compose.ci.override.yml up --build -d
 
       - name: Run tests in Docker container
-        run: docker compose -f docker/docker-compose.yml -f docker-compose.ci.override.yml run --rm app python manage.py test
+        run: docker compose -f docker/docker-compose.yml -f docker/docker-compose.ci.override.yml run --rm app python manage.py test
 
       - name: Tear down Docker Compose services
         if: "always()"
-        run: docker compose -f docker/docker-compose.yml -f docker-compose.ci.override.yml down
+        run: docker compose -f docker/docker-compose.yml -f docker/docker-compose.ci.override.yml down

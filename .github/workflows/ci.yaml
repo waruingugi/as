@@ -43,27 +43,12 @@ jobs:
           version: "3.9"
           services:
             app:
-              environment:
-                POSTGRES_USER: "${{ secrets.POSTGRES_USER }}"
-                POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
-                POSTGRES_DB: "${{ secrets.POSTGRES_DB }}"
-                POSTGRES_HOST: "host.docker.internal"
               extra_hosts:
                 - "host.docker.internal:host-gateway"
             celery_worker:
-              environment:
-                POSTGRES_USER: "${{ secrets.POSTGRES_USER }}"
-                POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
-                POSTGRES_DB: "${{ secrets.POSTGRES_DB }}"
-                POSTGRES_HOST: "host.docker.internal"
               extra_hosts:
                 - "host.docker.internal:host-gateway"
             celery_beat:
-              environment:
-                POSTGRES_USER: "${{ secrets.POSTGRES_USER }}"
-                POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
-                POSTGRES_DB: "${{ secrets.POSTGRES_DB }}"
-                POSTGRES_HOST: "host.docker.internal"
               extra_hosts:
                 - "host.docker.internal:host-gateway"
           EOF

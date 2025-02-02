@@ -23,6 +23,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,24 +48,34 @@ jobs:
 
       - name: Create docker-compose override for CI
         run: |
-          cat << 'EOF' > docker-compose.override.yml
-          version: "3.9"
-          services:
+          cat <<EOF > docker-compose.override.yml
+            version: "3.9"
+            services:
             app:
-              environment:
+                environment:
                 POSTGRES_USER: "${{ secrets.POSTGRES_USER }}"
                 POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
                 POSTGRES_DB: "${{ secrets.POSTGRES_DB }}"
                 POSTGRES_HOST: "host.docker.internal"
                 SECRET_KEY: "${{ secrets.SECRET_KEY }}"
                 DEBUG: 0
-              extra_hosts:
+                REDIS_URL: "redis://redis:6379"
+                KUBERNETES_TOKEN: ""
+                KUBERNETES_API_BASE_URL: ""
+                REBOOT_WORKERS: 1
+                NEW_RELIC_LICENSE: ""
+                LOGTAIL_TOKEN: ""
+                LOGTAIL_HOST=""
+                HOST_PINNACLE_USER_ID: ""
+                HOST_PINNACLE_PASSWORD: ""
+                HOST_PINNACLE_SENDER_ID: ""
+                extra_hosts:
                 - "host.docker.internal:host-gateway"
             celery_worker:
-              extra_hosts:
+                extra_hosts:
                 - "host.docker.internal:host-gateway"
             celery_beat:
-              extra_hosts:
+                extra_hosts:
                 - "host.docker.internal:host-gateway"
           EOF
 

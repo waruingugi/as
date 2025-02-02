@@ -168,6 +168,9 @@ cython_debug/
 # Ignore specific k8 helm file
 k8/workers/workers.zip
 
+# Ignore ggshield cache
+.cache_ggshield
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

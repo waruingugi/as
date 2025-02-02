@@ -51,32 +51,32 @@ jobs:
           cat <<EOF > docker-compose.override.yml
             version: "3.9"
             services:
-            app:
-                environment:
-                POSTGRES_USER: "${{ secrets.POSTGRES_USER }}"
-                POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
-                POSTGRES_DB: "${{ secrets.POSTGRES_DB }}"
-                POSTGRES_HOST: "host.docker.internal"
-                SECRET_KEY: "${{ secrets.SECRET_KEY }}"
-                DEBUG: 0
-                REDIS_URL: "redis://redis:6379"
-                KUBERNETES_TOKEN: ""
-                KUBERNETES_API_BASE_URL: ""
-                REBOOT_WORKERS: 1
-                NEW_RELIC_LICENSE: ""
-                LOGTAIL_TOKEN: ""
-                LOGTAIL_HOST: ""
-                HOST_PINNACLE_USER_ID: ""
-                HOST_PINNACLE_PASSWORD: ""
-                HOST_PINNACLE_SENDER_ID: ""
-                extra_hosts:
-                - "host.docker.internal:host-gateway"
-            celery_worker:
-                extra_hosts:
-                - "host.docker.internal:host-gateway"
-            celery_beat:
-                extra_hosts:
-                - "host.docker.internal:host-gateway"
+                app:
+                    environment:
+                    POSTGRES_USER: "${{ secrets.POSTGRES_USER }}"
+                    POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
+                    POSTGRES_DB: "${{ secrets.POSTGRES_DB }}"
+                    POSTGRES_HOST: "host.docker.internal"
+                    SECRET_KEY: "${{ secrets.SECRET_KEY }}"
+                    DEBUG: 0
+                    REDIS_URL: "redis://redis:6379"
+                    KUBERNETES_TOKEN: ""
+                    KUBERNETES_API_BASE_URL: ""
+                    REBOOT_WORKERS: 1
+                    NEW_RELIC_LICENSE: ""
+                    LOGTAIL_TOKEN: ""
+                    LOGTAIL_HOST: ""
+                    HOST_PINNACLE_USER_ID: ""
+                    HOST_PINNACLE_PASSWORD: ""
+                    HOST_PINNACLE_SENDER_ID: ""
+                    extra_hosts:
+                    - "host.docker.internal:host-gateway"
+                celery_worker:
+                    extra_hosts:
+                    - "host.docker.internal:host-gateway"
+                celery_beat:
+                    extra_hosts:
+                    - "host.docker.internal:host-gateway"
           EOF
 
       - name: Build Docker images

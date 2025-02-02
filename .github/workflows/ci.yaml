@@ -65,7 +65,7 @@ jobs:
                 REBOOT_WORKERS: 1
                 NEW_RELIC_LICENSE: ""
                 LOGTAIL_TOKEN: ""
-                LOGTAIL_HOST=""
+                LOGTAIL_HOST: ""
                 HOST_PINNACLE_USER_ID: ""
                 HOST_PINNACLE_PASSWORD: ""
                 HOST_PINNACLE_SENDER_ID: ""

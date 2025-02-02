@@ -30,7 +30,7 @@ jobs:
       - name: List project structure
         run: |
           echo "Listing project directory structure (max depth 3):"
-          find . -maxdepth=3 | sort
+          tree -L 2
 
       # 4. Build your Docker images using docker-compose.
       #    This step uses your docker-compose file to build the app and related services.

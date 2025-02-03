@@ -1,0 +1,63 @@
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 8000
+
+app:
+  name: aviator-backend
+  containerPort: 8000
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+
+celery:
+  worker:
+    name: celery-worker
+    replicas: 8  # One worker per CPU core
+    concurrency: 1  # Each worker runs 1 task at a time to avoid GIL issues
+    command: ["celery", "-A", "aviator", "worker", "--concurrency=1", "--pool=processes", "-l", "info"]
+    resources:
+      requests:
+        cpu: "1"
+        memory: "500Mi"
+      limits:
+        cpu: "1"
+        memory: "1Gi"
+
+  beat:
+    name: celery-beat
+    replicas: 1  # Only one Celery Beat instance
+    command: ["celery", "-A", "aviator", "beat", "-l", "info"]
+    resources:
+      requests:
+        cpu: "250m"  # 0.25 CPU
+        memory: "100Mi"
+      limits:
+        cpu: "500m"  # 0.5 CPU
+        memory: "200Mi"
+
+volumes:
+  enabled: true
+  path: /data
+
+networkPolicy:
+  enabled: false
+
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: api.aviatorsignals.co.ke
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - api.aviatorsignals.co.ke
+      secretName: tls-secret

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.celery.beat.name }}
+spec:
+  replicas: {{ .Values.celery.beat.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.celery.beat.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.celery.beat.name }}
+    spec:
+      containers:
+        - name: {{ .Values.celery.beat.name }}
+          image: ghcr.io/waruingugi/as-api:latest
+          imagePullPolicy: Always
+          command: {{ .Values.celery.beat.command }}
+          resources:
+            requests:
+              cpu: {{ .Values.celery.beat.resources.requests.cpu }}
+              memory: {{ .Values.celery.beat.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.celery.beat.resources.limits.cpu }}
+              memory: {{ .Values.celery.beat.resources.limits.memory }}
+          volumeMounts:
+            - name: data-volume
+              mountPath: {{ .Values.volumes.path }}
+      volumes:
+        - name: data-volume
+          emptyDir: {}

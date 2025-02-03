@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.celery.worker.name }}
+spec:
+  replicas: {{ .Values.celery.worker.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.celery.worker.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.celery.worker.name }}
+    spec:
+      containers:
+        - name: {{ .Values.celery.worker.name }}
+          image: ghcr.io/waruingugi/as-api:latest
+          imagePullPolicy: Always
+          command: {{ .Values.celery.worker.command }}
+          resources:
+            requests:
+              cpu: {{ .Values.celery.worker.resources.requests.cpu }}
+              memory: {{ .Values.celery.worker.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.celery.worker.resources.limits.cpu }}
+              memory: {{ .Values.celery.worker.resources.limits.memory }}
+          livenessProbe:
+            exec:
+              command: ["pgrep", "celery"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pgrep", "celery"]
+            initialDelaySeconds: 3
+            periodSeconds: 5

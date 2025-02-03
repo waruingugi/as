@@ -1,0 +1,6 @@
+- Pausing project to focus on Leta.
+- The as-api K8 have not been tested or deployment
+- When re-deploying workers on k8, usign a 8 CPU node for each app.
+- Add a health endpoint that will be used by k8 liveness probes
+- Add latest app version api endpoint
+- Monitor celery CPU usage to understand whether to scale down or up

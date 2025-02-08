@@ -11,18 +11,22 @@ from strategies.constants import (
 
 class Strategy(ABC):
     def __init__(self, family: str) -> None:
+        self.family = family
+
         self._has_started = False
+        self._is_paused = True
+        self._is_exited = True
+
         self._crash_target = DEFAULT_CRASH_TARGET
-        self._ledger: deque[LedgerEntry] = deque()
+        self.bank_roll = DEFAULT_BANK_ROLL
+        self._current_balance = DEFAULT_BANK_ROLL
         self._stake = DEFAULT_STAKE
+
+        self._ledger: deque[LedgerEntry] = deque()
+
         self.no_of_losses = 0
         self.no_of_wins = 0
         self.multipliers = []
-        self.bank_roll = DEFAULT_BANK_ROLL
-        self._current_balance = DEFAULT_BANK_ROLL
-        self.family = family
-        self._is_paused = True
-        self._is_exited = True
 
     def reset(self) -> None:
         """
@@ -41,17 +45,20 @@ class Strategy(ABC):
         - `_is_exited`: Indicates whether the strategy has exited, set to True.
         """
 
-        self._has_started = False
-        self._crash_target = DEFAULT_CRASH_TARGET
         self._ledger: deque[LedgerEntry] = deque()
         self._stake = DEFAULT_STAKE
+
+        self.has_started = False
+        self.is_paused = True
+        self.has_exited = True
+
+        self.bank_roll = DEFAULT_BANK_ROLL
+        self.current_balance = DEFAULT_BANK_ROLL
+        self.crash_target = DEFAULT_CRASH_TARGET
+
         self.no_of_losses = 0
         self.no_of_wins = 0
         self.multipliers = []
-        self.bank_roll = DEFAULT_BANK_ROLL
-        self._current_balance = DEFAULT_BANK_ROLL
-        self._is_paused = True
-        self._is_exited = True
 
     def __call__(self, *args, **kwargs):
         return self.reset()

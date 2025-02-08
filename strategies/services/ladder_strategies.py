@@ -47,7 +47,9 @@ class LadderBaseStrategy(Strategy):
                 and len(self.multipliers) > self.start_triggers["multipliers_len"]
                 and all(
                     multiplier < self.start_triggers["multipliers_are_below"]
-                    for multiplier in self.multipliers[-3:]
+                    for multiplier in self.multipliers[
+                        -self.start_triggers["multipliers_len"] - 1 : -1
+                    ]
                 )
             ):
                 self.has_started = True
@@ -80,13 +82,25 @@ class TallStepLadderStrategy(LadderBaseStrategy):
     STEP 3: Repeat STEP 2 until you reach you the reach stop loss or hit a win.
     """
 
+    DEFAULT_CRASH_TARGET = 2.00
+    START_TRIGGERS = {"multipliers_are_below": 2.00, "multipliers_len": 7}
+
     def __init__(self) -> None:
         super().__init__()
-        self.default_crash_target = 2.00
-        self._crash_target = 2.00
+        self.default_crash_target = self.DEFAULT_CRASH_TARGET
+        self._crash_target = self.DEFAULT_CRASH_TARGET
         self.stop_loss = DEFAULT_STOP_LOSS
+        self.start_triggers = (
+            self.START_TRIGGERS.copy()
+        )  # Use `.copy()` to avoid modifying class-level dict
 
-        self.start_triggers = {"multipliers_are_below": 2.00, "multipliers_len": 7}
+    def reset(self) -> None:
+        """Reset the strategy to its initial values."""
+        super().reset()
+        self.default_crash_target = self.DEFAULT_CRASH_TARGET
+        self._crash_target = self.DEFAULT_CRASH_TARGET
+        self.stop_loss = DEFAULT_STOP_LOSS
+        self.start_triggers = self.START_TRIGGERS.copy()
 
 
 class MediumStepLadderStrategy(LadderBaseStrategy):
@@ -98,13 +112,25 @@ class MediumStepLadderStrategy(LadderBaseStrategy):
     STEP 3: Repeat STEP 2 until you reach you the reach stop loss or hit a win.
     """
 
+    DEFAULT_CRASH_TARGET = 2.00
+    START_TRIGGERS = {"multipliers_are_below": 2.00, "multipliers_len": 5}
+
     def __init__(self) -> None:
         super().__init__()
-        self.default_crash_target = 2.00
-        self._crash_target = 2.00
+        self.default_crash_target = self.DEFAULT_CRASH_TARGET
+        self._crash_target = self.DEFAULT_CRASH_TARGET
         self.stop_loss = DEFAULT_STOP_LOSS
+        self.start_triggers = (
+            self.START_TRIGGERS.copy()
+        )  # Use `.copy()` to avoid modifying class-level dict
 
-        self.start_triggers = {"multipliers_are_below": 2.00, "multipliers_len": 5}
+    def reset(self) -> None:
+        """Reset the strategy to its initial values."""
+        super().reset()
+        self.default_crash_target = self.DEFAULT_CRASH_TARGET
+        self._crash_target = self.DEFAULT_CRASH_TARGET
+        self.stop_loss = DEFAULT_STOP_LOSS
+        self.start_triggers = self.START_TRIGGERS.copy()
 
 
 class ShortStepLadderStrategy(LadderBaseStrategy):
@@ -116,15 +142,27 @@ class ShortStepLadderStrategy(LadderBaseStrategy):
     STEP 3: Repeat STEP 2 until you reach you the reach stop loss or hit a win.
     """
 
+    DEFAULT_CRASH_TARGET = 2.00
+    START_TRIGGERS = {"multipliers_are_below": 2.00, "multipliers_len": 3}
+
     def __init__(self) -> None:
         super().__init__()
-        self.default_crash_target = 2.00
-        self._crash_target = 2.00
+        self.default_crash_target = self.DEFAULT_CRASH_TARGET
+        self._crash_target = self.DEFAULT_CRASH_TARGET
         self.stop_loss = DEFAULT_STOP_LOSS
+        self.start_triggers = (
+            self.START_TRIGGERS.copy()
+        )  # Use `.copy()` to avoid modifying class-level dict
 
-        self.start_triggers = {"multipliers_are_below": 2.00, "multipliers_len": 3}
+    def reset(self) -> None:
+        """Reset the strategy to its initial values."""
+        super().reset()
+        self.default_crash_target = self.DEFAULT_CRASH_TARGET
+        self._crash_target = self.DEFAULT_CRASH_TARGET
+        self.stop_loss = DEFAULT_STOP_LOSS
+        self.start_triggers = self.START_TRIGGERS.copy()
 
 
 tall_step_ladder = TallStepLadderStrategy()
-short_step_ladder = ShortStepLadderStrategy()
 medium_step_ladder = MediumStepLadderStrategy()
+short_step_ladder = ShortStepLadderStrategy()

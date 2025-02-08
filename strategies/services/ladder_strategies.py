@@ -1,4 +1,4 @@
-from strategies.constants import DEFAULT_STOP_LOSS, BettingStrategyFamily
+from strategies.constants import BettingStrategyFamily
 from strategies.services import Strategy
 
 
@@ -7,7 +7,6 @@ class LadderBaseStrategy(Strategy):
         super().__init__(family=BettingStrategyFamily.MARTINGALE.value)
         self.default_crash_target = 2.00
         self._crash_target = 2.00
-        self.stop_loss = DEFAULT_STOP_LOSS
 
         self.start_triggers = {"multipliers_are_below": 2.00, "multipliers_len": 3}
 
@@ -69,7 +68,7 @@ class LadderBaseStrategy(Strategy):
         self.no_of_losses += 1
         self.crash_target += 1.00
 
-        if (self.no_of_losses >= self.stop_loss) or (self.current_balance <= 0):
+        if self.current_balance <= 0:
             self.has_exited = True
 
 
@@ -89,7 +88,6 @@ class TallStepLadderStrategy(LadderBaseStrategy):
         super().__init__()
         self.default_crash_target = self.DEFAULT_CRASH_TARGET
         self._crash_target = self.DEFAULT_CRASH_TARGET
-        self.stop_loss = DEFAULT_STOP_LOSS
         self.start_triggers = (
             self.START_TRIGGERS.copy()
         )  # Use `.copy()` to avoid modifying class-level dict
@@ -99,7 +97,6 @@ class TallStepLadderStrategy(LadderBaseStrategy):
         super().reset()
         self.default_crash_target = self.DEFAULT_CRASH_TARGET
         self._crash_target = self.DEFAULT_CRASH_TARGET
-        self.stop_loss = DEFAULT_STOP_LOSS
         self.start_triggers = self.START_TRIGGERS.copy()
 
 
@@ -119,7 +116,6 @@ class MediumStepLadderStrategy(LadderBaseStrategy):
         super().__init__()
         self.default_crash_target = self.DEFAULT_CRASH_TARGET
         self._crash_target = self.DEFAULT_CRASH_TARGET
-        self.stop_loss = DEFAULT_STOP_LOSS
         self.start_triggers = (
             self.START_TRIGGERS.copy()
         )  # Use `.copy()` to avoid modifying class-level dict
@@ -129,7 +125,6 @@ class MediumStepLadderStrategy(LadderBaseStrategy):
         super().reset()
         self.default_crash_target = self.DEFAULT_CRASH_TARGET
         self._crash_target = self.DEFAULT_CRASH_TARGET
-        self.stop_loss = DEFAULT_STOP_LOSS
         self.start_triggers = self.START_TRIGGERS.copy()
 
 
@@ -149,7 +144,6 @@ class ShortStepLadderStrategy(LadderBaseStrategy):
         super().__init__()
         self.default_crash_target = self.DEFAULT_CRASH_TARGET
         self._crash_target = self.DEFAULT_CRASH_TARGET
-        self.stop_loss = DEFAULT_STOP_LOSS
         self.start_triggers = (
             self.START_TRIGGERS.copy()
         )  # Use `.copy()` to avoid modifying class-level dict
@@ -159,7 +153,6 @@ class ShortStepLadderStrategy(LadderBaseStrategy):
         super().reset()
         self.default_crash_target = self.DEFAULT_CRASH_TARGET
         self._crash_target = self.DEFAULT_CRASH_TARGET
-        self.stop_loss = DEFAULT_STOP_LOSS
         self.start_triggers = self.START_TRIGGERS.copy()
 
 

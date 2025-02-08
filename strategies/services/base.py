@@ -232,6 +232,17 @@ class Strategy(ABC):
 
         return self.current_balance > self.bank_roll
 
+    @property
+    def return_on_investment(self) -> float:
+        """
+        Calculate the current Return on Investment (ROI).
+        Returns:
+            float: The current ROI as a percentage.
+        """
+        if self.bank_roll == 0:
+            return 0.0
+        return ((self.current_balance - self.bank_roll) / self.bank_roll) * 100
+
     def _record_bet(
         self,
         *,

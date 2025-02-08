@@ -67,13 +67,6 @@ class LadderStrategyTests(TestCase):
         self.assertEqual(self.short_ladder.no_of_losses, 1)
         self.assertEqual(self.short_ladder.crash_target, 3.00)
 
-    def test_stop_loss(self) -> None:
-        """Simulate repeated losses until stop loss is hit"""
-        for _ in range(self.short_ladder.stop_loss):
-            self.short_ladder.execute([1.5, 1.6, 1.8, 1.4])
-
-        self.assertTrue(self.short_ladder.has_exited)
-
     def test_reset(self) -> None:
         """Ensure reset restores default values"""
         self.short_ladder.execute([1.5, 1.6, 1.8, 2.2])

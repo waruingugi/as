@@ -273,3 +273,15 @@ class Strategy(ABC):
             is_profitable=final_balance > initial_balance,
         )
         self._ledger.append(entry)
+
+    def _next_bet(self) -> dict:
+        """Returns a suggestion of the next bet to be placed."""
+        return {
+            "stake": self.stake,
+            "cash_out_at": self.crash_target,
+            "flew_away_at": None,
+            "initial_balance": self.current_balance,
+            "final_balance": None,
+            "net_profit": None,
+            "is_profitable": None,
+        }

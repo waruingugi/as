@@ -55,6 +55,6 @@ ENTRYPOINT [ "/scripts/entrypoint.sh" ]
 COPY . .
 
 # The prod server starts by default when the container starts
-# Commented for now because we're using fly.io 'processes' and 'release_command' as
-# defined in the fly.toml
-# CMD ["/scripts/start-prod-server.sh"]
+# If you're using fly.io, use 'processes' and 'release_command' as
+# defined in the fly.toml and comment the below line
+CMD ["/scripts/start-prod-server.sh"]

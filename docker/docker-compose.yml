@@ -23,7 +23,7 @@ services:
       dockerfile: ./docker/Dockerfile
     networks:
       - aviator-backend-network
-    command: celery -A as as -l info
+    command: celery -A aviator worker --loglevel=info
     volumes:
       - .:/data
     depends_on:
@@ -36,7 +36,7 @@ services:
       dockerfile: ./docker/Dockerfile
     networks:
       - aviator-backend-network
-    command: celery -A aviator.celery -l info
+    command: celery -A aviator beat --loglevel=info
     volumes:
       - .:/data
     depends_on:

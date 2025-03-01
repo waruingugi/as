@@ -40,7 +40,7 @@ ALLOWED_HOSTS: list[str] = [
     "localhost",
     "127.0.0.1",
     ".fly.dev",
-    ".azurewebsites.net",
+    "aviator-signals-b3dfb6ekcafnfvbe.eastus-01.azurewebsites.net",
     "aviatorsignals.co.ke",
 ]
 

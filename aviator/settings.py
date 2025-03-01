@@ -36,7 +36,13 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.environ["DEBUG"]))
 
-ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1", ".fly.dev"]
+ALLOWED_HOSTS: list[str] = [
+    "localhost",
+    "127.0.0.1",
+    ".fly.dev",
+    ".azurewebsites.net",
+    "aviatorsignals.co.ke",
+]
 
 CSRF_TRUSTED_ORIGINS: list[str] = ["https://*.fly.dev"]
 

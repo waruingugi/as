@@ -4,6 +4,12 @@
 # celery -A aviator purge -f
 set -e
 
+# Only needed for azure apps
+# (sometimes 'python manage.py collectstatic' fails due to permission errors)
+echo "Ensuring correct static file permissions..."
+mkdir -p /home/api/static
+chmod -R 755 /home/api/static
+
 echo "Applying database migrations..."
 python manage.py migrate
 

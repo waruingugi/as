@@ -4,6 +4,9 @@
 # celery -A aviator purge -f
 set -e
 
+echo "Collecting static files..."
+python manage.py collectstatic --noinput --clear
+
 echo "Applying database migrations..."
 python manage.py migrate
 

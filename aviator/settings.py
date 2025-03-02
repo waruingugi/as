@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "django_filters",
+    "storages",
     # Apps
     "observers",
     "commons",
@@ -159,15 +160,53 @@ USE_TZ = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = "static/"
+# STATIC_URL = "static/"
 
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = os.path.join("/home/site/wwwroot", "static").replace("\\", "/")
+# STATIC_ROOT = os.path.join("/home/site/wwwroot", "static").replace("\\", "/")
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# Azure Media Files Storage
+AZURE_ACCOUNT_NAME = os.environ["AZURE_ACCOUNT_NAME"]
+AZURE_ACCOUNT_KEY = os.environ["AZURE_ACCOUNT_KEY"]
+AZURE_CONNECTION_STRING = os.environ["AZURE_CONNECTION_STRING"]
+AZURE_CONTAINER_STATIC = os.environ["AZURE_CONTAINER_STATIC"]
+AZURE_CONTAINER_MEDIA = os.environ["AZURE_CONTAINER_MEDIA"]
+
+STATIC_ROOT = (
+    f"https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_CONTAINER_STATIC}/"
+)
+MEDIA_URL = (
+    f"https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_CONTAINER_MEDIA}/"
+)
+# Set Static URL to use Azure Blob Storage
+STATIC_URL = (
+    f"https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_CONTAINER_STATIC}/"
+)
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.azure_storage.AzureStorage",
+        "OPTIONS": {
+            "azure_container": AZURE_CONTAINER_MEDIA,
+            "account_name": AZURE_ACCOUNT_NAME,
+            "account_key": AZURE_ACCOUNT_KEY,
+            "connection_string": AZURE_CONNECTION_STRING,
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "storages.backends.azure_storage.AzureStorage",
+        "OPTIONS": {
+            "azure_container": AZURE_CONTAINER_STATIC,
+            "account_name": AZURE_ACCOUNT_NAME,
+            "account_key": AZURE_ACCOUNT_KEY,
+            "connection_string": AZURE_CONNECTION_STRING,
+        },
+    },
+}
 
 
 # Default primary key field type

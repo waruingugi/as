@@ -6,7 +6,7 @@ services:
     build:
       context: ../
       dockerfile: ./docker/Dockerfile
-    image: ghcr.io/waruingugi/as-api:latest
+    image: aviator-backend
     networks:
       - aviator-backend-network
     container_name: aviator-container
@@ -17,10 +17,7 @@ services:
       - "8000:8000"
 
   celery_worker:
-    deploy:
-      replicas: 3
     container_name: celery-worker
-    image: ghcr.io/waruingugi/as-api:latest
     build:
       context: ../
       dockerfile: ./docker/Dockerfile
@@ -34,7 +31,6 @@ services:
 
   celery_beat:
     container_name: celery-beat
-    image: ghcr.io/waruingugi/as-api:latest
     build:
       context: ../
       dockerfile: ./docker/Dockerfile

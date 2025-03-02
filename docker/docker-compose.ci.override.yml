@@ -21,6 +21,11 @@ services:
       HOST_PINNACLE_SENDER_ID: ""
       ONESIGNAL_APP_ID: ""
       ONESIGNAL_API_KEY: ""
+      AZURE_ACCOUNT_NAME: ""
+      AZURE_ACCOUNT_KEY: ""
+      AZURE_CONTAINER_STATIC: ""
+      AZURE_CONTAINER_MEDIA: ""
+      AZURE_CONNECTION_STRING: ""
     extra_hosts:
       - "host.docker.internal:host-gateway"
   celery_worker:

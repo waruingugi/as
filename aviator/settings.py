@@ -42,7 +42,6 @@ ALLOWED_HOSTS: list[str] = [
     ".fly.dev",
     "aviator-signals-b3dfb6ekcafnfvbe.eastus-01.azurewebsites.net",
     ".aviatorsignals.co.ke",
-    "169.254.129.2",
 ]
 
 CSRF_TRUSTED_ORIGINS: list[str] = ["https://*.fly.dev"]

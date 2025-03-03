@@ -43,6 +43,16 @@ logging.config.dictConfig(
                 "level": "INFO",
                 "handlers": log_handlers,  # Dynamically apply handlers
             },
+            "django": {
+                "level": "INFO",
+                "handlers": log_handlers,
+                "propagate": False,
+            },
+            "celery": {  # ADD CELERY LOGGER
+                "level": "INFO",
+                "handlers": log_handlers,
+                "propagate": True,
+            },
         },
     }
 )

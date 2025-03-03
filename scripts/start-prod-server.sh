@@ -9,12 +9,12 @@ python manage.py collectstatic --noinput --clear
 
 echo "Applying database migrations..."
 python manage.py migrate
-#
-#echo "Starting Celery worker..."
-#celery -A aviator worker --loglevel=info --concurrency=3 &
-#
-#echo "Starting Celery beat..."
-#celery -A aviator beat --loglevel=info &
+
+echo "Starting Celery worker..."
+celery -A aviator worker --loglevel=info --concurrency=3 &
+
+echo "Starting Celery beat..."
+celery -A aviator beat --loglevel=info &
 
 
 echo "Starting Gunicorn..."

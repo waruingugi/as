@@ -183,3 +183,7 @@ k8/workers/workers.zip
 .idea/
 
 # End of https://www.toptal.com/developers/gitignore/api/django
+
+# Custom zip files
+betterstack.zip
+workers.zip

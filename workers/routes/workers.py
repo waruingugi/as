@@ -6,7 +6,7 @@ from workers.views.workers import (
     WorkerRetrieveUpdateView,
 )
 
-app_Name = "workers"
+app_name = "workers"
 
 
 urlpatterns = [

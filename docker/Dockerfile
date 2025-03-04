@@ -57,4 +57,4 @@ COPY . .
 # The prod server starts by default when the container starts
 # If you're using fly.io, use 'processes' and 'release_command' as
 # defined in the fly.toml and comment the below line
-CMD ["/scripts/start-prod-server.sh"]
+# CMD ["/scripts/start-prod-server.sh"]

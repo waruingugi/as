@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for as-api on 2025-01-10T20:41:55+03:00
+# fly.toml app configuration file generated for aviator-signals-api on 2025-03-04T08:40:47+03:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'as-api'
+app = 'aviator-signals-api'
 primary_region = 'iad'
 kill_signal = 'SIGINT'
 kill_timeout = '10s'
@@ -11,14 +11,17 @@ kill_timeout = '10s'
 [build]
   dockerfile = 'docker/Dockerfile'
 
+[deploy]
+  release_command = "/bin/bash -c 'python manage.py migrate && python manage.py collectstatic --noinput --clear'"
+
 [env]
   DJANGO_SETTINGS_MODULE = 'aviator.settings'
   TZ = 'Africa/Nairobi'
 
 [processes]
   app = 'gunicorn aviator.wsgi --bind 0.0.0.0:8000 --timeout 60 --access-logfile - --error-logfile -'
-  celery_worker = "celery -A aviator worker -l info"
-  celery_beat = "celery -A aviator beat -l info"
+  celery_beat = 'celery -A aviator beat -l info'
+  celery_worker = 'celery -A aviator worker -l info'
 
 [http_service]
   internal_port = 8000
@@ -53,13 +56,21 @@ kill_timeout = '10s'
     grace_period = '5s'
 
 [[vm]]
-  size = 'shared-cpu-2x'
-  memory = '512MB'
+  size = 'performance-1x'
+  processes = ['app']
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '256MB'
   cpu_kind = 'shared'
+  processes = ['celery_worker']
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '256MB'
+  cpu_kind = 'shared'
+  processes = ['celery_beat']
 
 [[statics]]
   guest_path = '/app/static'
   url_prefix = '/static'
-
-[deploy]
-  release_command = "/bin/bash -c 'python manage.py migrate && python manage.py collectstatic --noinput'"

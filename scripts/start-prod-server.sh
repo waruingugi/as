@@ -16,7 +16,6 @@ celery -A aviator worker --loglevel=info --concurrency=3 &
 echo "Starting Celery beat..."
 celery -A aviator beat --loglevel=info &
 
-
 echo "Starting Gunicorn..."
 exec gunicorn --workers=3 --bind=0.0.0.0:8000 aviator.wsgi:application --access-logfile - --error-logfile -
 

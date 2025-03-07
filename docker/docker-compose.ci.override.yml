@@ -26,6 +26,7 @@ services:
       AZURE_CONTAINER_STATIC: ""
       AZURE_CONTAINER_MEDIA: ""
       AZURE_CONNECTION_STRING: ""
+      APP_VERSION: ""
     extra_hosts:
       - "host.docker.internal:host-gateway"
   celery_worker:

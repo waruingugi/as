@@ -1,8 +1,9 @@
+from django.core.cache import cache
 from django.db.utils import IntegrityError
 from django.urls import reverse
 from rest_framework import status
 
-from commons.constants import BettingApp, SeedName
+from commons.constants import BettingApp, CacheKeys, SeedName
 from commons.tests.test_base import UserBaseAPITestCase
 from workers.models import Worker
 from workers.serializers import WorkerListSerializer
@@ -157,3 +158,35 @@ class WorkerRetrieveUpdateViewTests(UserBaseAPITestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class WorkersHealthViewTests(UserBaseAPITestCase):
+    def setUp(self) -> None:
+        self.health_url = reverse(
+            "workers:health", kwargs={"app": BettingApp.BETIKA.value}
+        )
+
+        self.worker = Worker.objects.create(
+            name=SeedName.list()[0], app=BettingApp.BETIKA.value
+        )
+        self.force_authenticate_staff_user()
+
+    def tearDown(self) -> None:
+        cache.clear()
+
+    def test_worker_health_status_ok(self) -> None:
+        response = self.client.get(self.health_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["status"], "ok")
+
+    def test_worker_health_status_error(self) -> None:
+        cache.set(CacheKeys.REBOOTED_WORKER.format(self.worker.id), True)
+        response = self.client.get(self.health_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["status"], "error")
+
+    def test_no_workers_found(self) -> None:
+        Worker.objects.all().delete()
+        response = self.client.get(self.health_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["detail"], "No workers found")

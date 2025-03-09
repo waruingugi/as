@@ -1,8 +1,11 @@
 import random
 from decimal import Decimal
 
+from django.core.cache import cache
+
 from analytics.constants import OVER_20X_SUGGESTIONS, CrashesToMonitor
 from analytics.services import Probability
+from commons.constants import CacheKeys
 
 
 def format_worker_probabilities(worker) -> dict:
@@ -13,7 +16,7 @@ def format_worker_probabilities(worker) -> dict:
         suggestion = ""
         # Add suggestions only for over_20x
         if crash == CrashesToMonitor.OVER_20X.value:
-            suggestion = get_over_20x_suggestion(probability)
+            suggestion = get_over_20x_suggestion(worker.id, probability)
 
         probabilities[f"over_{int(crash)}x"] = {
             "probability": probability,
@@ -29,12 +32,32 @@ def format_worker_probabilities(worker) -> dict:
 
 # TODO: Calculate probabilities from DB and derive suggestions.
 # This will be more dynamic and complex in future
-def get_over_20x_suggestion(probability: float) -> str:
-    if probability >= Decimal(75):  # Extreme probability
-        return random.choice(OVER_20X_SUGGESTIONS["EXTREME"])
-    elif probability > Decimal(50):  # High probability
-        return random.choice(OVER_20X_SUGGESTIONS["HIGH"])
-    elif probability > Decimal(25):  # Moderate probability
-        return random.choice(OVER_20X_SUGGESTIONS["MODERATE"])
-    else:  # Low probability
-        return random.choice(OVER_20X_SUGGESTIONS["LOW"])
+def get_over_20x_suggestion(worker_id: str, probability: float) -> str:
+    """This function generates a suggestion based on the probability of a payout.
+    We cache the suggestion to prevent users from getting different suggestions for the same probability range.
+    """
+    # Determine the current range
+    if probability >= Decimal(75):
+        current_range = "EXTREME"  # Extreme probability
+    elif probability > Decimal(50):
+        current_range = "HIGH"  # High probability
+    elif probability > Decimal(25):
+        current_range = "MODERATE"  # Moderate probability
+    else:
+        current_range = "LOW"  # Low probability
+
+    cache_key = CacheKeys.WORKER_PROBABILITY_SUGGESTION.format(worker_id, current_range)
+    cached_suggestion = cache.get(cache_key)
+
+    if cached_suggestion and cached_suggestion["range"] == current_range:
+        return cached_suggestion["suggestion"]
+
+    # Otherwise, generate a new suggestion
+    new_suggestion = random.choice(OVER_20X_SUGGESTIONS[current_range])
+
+    # Cache the new suggestion with the current range
+    cache.set(
+        cache_key, {"range": current_range, "suggestion": new_suggestion}, timeout=None
+    )
+
+    return new_suggestion

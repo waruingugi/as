@@ -54,7 +54,7 @@ class WorkersHealthView(APIView):
         if workers.exists():
             data = []
             for worker in workers:
-                worker_status = "ok"
+                worker_status = "error"
                 if cache.get(CacheKeys.REBOOTED_WORKER.format(worker.id)):
                     worker_status = "error"
 

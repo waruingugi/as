@@ -49,16 +49,16 @@ PROB_DEFAULT_CACHE_DURATION: int = 600
 OVER_20X_SUGGESTIONS = {
     "EXTREME": [
         "Odds are high! Bet now but don’t go all in.",
-        "Very high chance for 20x. Watch out for swings.",
-        "Sky high odds! A big win or loss is near.",
-        "20x is coming soon. Strike while it’s hot!",
-        "Extreme potential. Be smart with your bet.",
+        "Very high chance for 20x. But it's risky.",
+        "Sky high odds! This may be big win or loss.",
+        "Extreme chances. Your call on how to play this.",
+        "An over 20x may appear any moment from now.",
     ],
     "HIGH": [
         "High 20x odds. This could be your moment.",
-        "Strong chance for 20x. Now might be the time.",
-        "Big payout likely. Watch and place your bet.",
-        "20x is possible. Think fast and act smart.",
+        "Strong chance for an over 20x. Now is the time.",
+        "An over 20x is likely to happen in a few minutes.",
+        "20x is around the corner. Start betting now.",
         "Chance is solid. Take the shot if you’re ready.",
     ],
     "MODERATE": [
@@ -66,13 +66,13 @@ OVER_20X_SUGGESTIONS = {
         "Fair chance for 20x. Make your move wisely.",
         "20x could happen. Bet small or wait it out.",
         "Decent odds. Your call on how to play this.",
-        "Moderate chance. Step in or hold off, your pick.",
+        "Moderate chance. Bet now or hold off, your pick.",
     ],
     "LOW": [
         "Low odds for 20x. Waiting might be smarter.",
-        "Chance is slim. 20x seems unlikely now.",
-        "Minimal 20x shot. Bet small or skip this round.",
-        "Probably not worth it. 20x is rare right now.",
-        "Small chance for 20x. Better spots may come.",
+        "Chance is slim. Bet on low crashes for now.",
+        "Minimal 20x chance. Skip the next few rounds.",
+        "Probably not worth it. An over 20x is unlikely.",
+        "Small chance for 20x. Wait for better chances.",
     ],
 }

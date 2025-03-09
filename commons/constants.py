@@ -57,6 +57,7 @@ class CacheKeys:
     WORKER_ID_CRASH_INTERVALS = "worker_id:{}:over{}x:intervals"
     WORKER_LAST_CRASH_TIME = "worker_id:{}:time_since:{}x:"
     WORKER_CRASH_QUERY = "worker_id:{}:query"
+    WORKER_PROBABILITY_SUGGESTION = "worker_id:{}:over{}:suggestion"
 
 
 class SeedName(str, Enum):

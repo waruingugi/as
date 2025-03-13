@@ -46,3 +46,15 @@ class UserModelTests(TestCase):
                 password=uuid4().hex,
                 username=self.test_username,
             )
+
+    def test_username_is_generated_if_not_set(self) -> None:
+        """Assert username is generated if not set."""
+
+        user = User.objects.create_user(
+            phone_number="+254701301405",
+            password=uuid4().hex,
+        )
+
+        self.assertIsNotNone(user.username)
+        self.assertNotEqual(user.username, "")
+        self.assertIsInstance(user.username, str)

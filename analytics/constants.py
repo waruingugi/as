@@ -48,18 +48,18 @@ PROB_DEFAULT_CACHE_DURATION: int = 600
 # }
 OVER_20X_SUGGESTIONS = {
     "EXTREME": [
-        "Odds are high! Bet now but don’t go all in.",
-        "Very high chance for 20x. But it's risky.",
-        "Sky high odds! This may be big win or loss.",
+        "Odds are high! Bet now but do not go all in.",
+        "An over 20x chance is very high. But it is risky.",
+        "This odds mean a big win or loss is near.",
         "Extreme chances. Your call on how to play this.",
-        "An over 20x may appear any moment from now.",
+        "Watch the trend. An over 20x will happen soon.",
     ],
     "HIGH": [
         "High 20x odds. This could be your moment.",
         "Strong chance for an over 20x. Now is the time.",
         "An over 20x is likely to happen in a few minutes.",
         "20x is around the corner. Start betting now.",
-        "Chance is solid. Take the shot if you’re ready.",
+        "Chance is solid. Take the shot if you are ready.",
     ],
     "MODERATE": [
         "Moderate 20x shot. Bet if you feel confident.",

@@ -12,8 +12,10 @@ class TestIdentifySimilarWorkersTask(TestCase):
     @patch("orchestrator.tasks.Multiplier.objects.filter")
     @patch("orchestrator.tasks.find_similar_workers")
     @patch("orchestrator.tasks.reboot_worker")
+    @patch("orchestrator.tasks.BettingApp.list", return_value=["BETIKA"])
     def test_reboot_similar_workers_successfully(
         self,
+        mock_app_list,
         mock_reboot_worker,
         mock_find_similar,
         mock_multiplier_filter,

@@ -1,5 +1,4 @@
 from django.core.cache import cache
-from django.db.utils import IntegrityError
 from django.urls import reverse
 from rest_framework import status
 
@@ -32,15 +31,18 @@ class WorkerCreateViewTests(UserBaseAPITestCase):
         self.assertNotEqual(response1.data["key"], response2.data["key"])
 
     def test_unique_worker_name_constraint_is_enforced(self) -> None:
-        with self.assertRaises(IntegrityError):
-            self.client.post(
-                self.create_url,
-                {"app": BettingApp.BETIKA.value, "name": SeedName.list()[2]},
-            )
-            self.client.post(
-                self.create_url,
-                {"app": BettingApp.BETIKA.value, "name": SeedName.list()[2]},
-            )
+        self.client.post(
+            self.create_url,
+            {"app": BettingApp.BETIKA.value, "name": SeedName.list()[2]},
+        )
+        response = self.client.post(
+            self.create_url,
+            {"app": BettingApp.BETIKA.value, "name": SeedName.list()[2]},
+        )
+        self.assertEqual(
+            response.data["non_field_errors"],
+            ["The fields app, name must make a unique set."],
+        )
 
     def test_invalid_worker_name(self) -> None:
         data = {"app": "invalid_worker_name", "name": SeedName.list()[1]}

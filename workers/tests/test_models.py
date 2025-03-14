@@ -35,3 +35,15 @@ class WorkerModelTests(TestCase):
         self.assertIn(
             "duplicate key value violates unique constraint", str(context.exception)
         )
+
+    def test_worker_with_different_name_same_seed_is_created_successfully(self) -> None:
+        # Create the first Worker instance with a specific seed name
+        Worker.objects.create(app=BettingApp.BETGR8.value, name=SeedName.SEED_O2.value)
+
+        # Create a second Worker instance with a different name but same seed name
+        worker = Worker.objects.create(
+            app=BettingApp.BETIKA.value, name=SeedName.SEED_O2.value
+        )
+
+        # Ensure the second Worker instance is created successfully
+        self.assertIsNotNone(worker)

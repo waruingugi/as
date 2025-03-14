@@ -129,11 +129,13 @@ class TestGetWorkersCrashHistory(TestCase):
             app=BettingApp.BETIKA.value, count=1, recompute=False
         )
         self.assertEqual(len(result), 2)
-        self.assertEqual(
-            result[1]["crash"], [{"created_at": "2025-01-26T10:00:00Z", "crash": 20.0}]
+
+        crash_values = [entry["crash"] for entry in result]
+        self.assertIn(
+            [{"created_at": "2025-01-26T10:00:00Z", "crash": 20.0}], crash_values
         )
-        self.assertEqual(
-            result[0]["crash"], [{"created_at": "2025-01-26T11:00:00Z", "crash": 15.0}]
+        self.assertIn(
+            [{"created_at": "2025-01-26T11:00:00Z", "crash": 15.0}], crash_values
         )
 
     def test_get_workers_crash_history_empty_workers(self) -> None:

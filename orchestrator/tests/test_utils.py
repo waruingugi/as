@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 from django.core.cache import cache
 from django.test import override_settings
 
+from commons.constants import CacheKeys
 from orchestrator.utils import (
     calculate_jaccard_similarity,
     find_similar_workers,
@@ -136,7 +137,11 @@ class TestRebootWorker(TestCase):
             headers={"Authorization": "Bearer mock_token"},
             verify=False,
         )
-        self.assertIsNone(cache.get("rebooted_worker:1"))
+
+        # Assert cache key is set
+        cache_key = CacheKeys.REBOOTED_WORKER.format(str(1))
+        self.assertIsNotNone(cache.get(cache_key))
+        self.assertTrue(cache.get(cache_key))
 
     @patch("orchestrator.utils.Worker.objects.get")
     @patch("orchestrator.utils.requests.delete")
@@ -182,9 +187,15 @@ class TestRebootWorker(TestCase):
 
     @patch("orchestrator.utils.Worker.objects.get")
     @patch("orchestrator.utils.os.getenv")
-    def test_missing_environment_variables(self, mock_getenv, mock_get) -> None:
+    @patch("orchestrator.utils.requests.delete")
+    def test_missing_environment_variables(
+        self, mock_delete_request, mock_getenv, mock_get
+    ) -> None:
         # Mock environment variables as missing
         mock_getenv.side_effect = lambda key: None
+
+        # Mock response as failed
+        mock_delete_request.return_value.status_code = 500
 
         # Mock worker object
         worker_mock = MagicMock()

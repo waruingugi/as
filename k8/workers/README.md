@@ -191,3 +191,15 @@ kubectl annotate apiservice v1beta1.metrics.k8s.io   meta.helm.sh/release-name=b
 ```
 kubectl label apiservice v1beta1.metrics.k8s.io   app.kubernetes.io/managed-by=Helm --overwrite
 ```
+
+#### When deploying a second app
+When deploying a second app, helm might block you from doing so due to ownership conflicts.
+To resolve this, use the following command:
+```
+kubectl get clusterrole,clusterrolebinding,secret -A -o json | jq -r '
+  .items[] 
+  | select(.metadata.annotations["meta.helm.sh/release-name"] == "<app>-workers") 
+  | "kubectl annotate " + .kind + " " + .metadata.name + " meta.helm.sh/release-name=<app>-workers meta.helm.sh/release-namespace=default --overwrite"
+' | bash
+```
+where `<app>` is the name of the app you are deploying.

@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 # Serializer for the probability response
 class ProbabilitySerializer(serializers.Serializer):
-    probability = serializers.DecimalField(decimal_places=3, max_digits=4)
+    probability = serializers.DecimalField(decimal_places=2, max_digits=5)
     suggestion = serializers.CharField()
 
 

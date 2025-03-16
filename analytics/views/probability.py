@@ -27,4 +27,5 @@ class WorkerProbabilitiesView(APIView):
         # Prepare the response data
         response_data = [format_worker_probabilities(worker) for worker in workers]
         serializer = WorkerProbabilitySerializer(response_data, many=True)
+
         return Response(serializer.data, status=status.HTTP_200_OK)

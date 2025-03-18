@@ -11,15 +11,12 @@ kill_timeout = '10s'
 [build]
   dockerfile = 'docker/Dockerfile'
 
-[deploy]
-  release_command = "/bin/bash -c 'python manage.py migrate && python manage.py collectstatic --noinput --clear'"
-
 [env]
   DJANGO_SETTINGS_MODULE = 'aviator.settings'
   TZ = 'Africa/Nairobi'
 
 [processes]
-  app = 'gunicorn aviator.wsgi --bind 0.0.0.0:8000 --timeout 60 --access-logfile - --error-logfile -'
+  app = ''
   celery_beat = 'celery -A aviator beat -l info'
   celery_worker = 'celery -A aviator worker -l info'
 

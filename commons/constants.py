@@ -53,6 +53,7 @@ class CacheKeys:
     """Central repository of cache keys."""
 
     WORKER_KEY = "worker_key:{}"
+    WORKER_IS_HEALTHY = "worker_id:{}:is_healthy"
     REBOOTED_WORKER = "rebooted_worker:{}"
     WORKER_GTE_CRASH_QUERY = "worker_id:{}:over{}x:query"
     WORKER_ID_CRASH_INTERVALS = "worker_id:{}:over{}x:intervals"
@@ -100,4 +101,6 @@ class Message(str, Enum):
 class PushNotification:
     class WELCOME_MESSAGE:
         title = "Welcome to Aviator Signals"
-        message = "Hello and welcome to Aviator Signals! Please choose a subscription plan to unlock the app."
+        message = (
+            "Welcome to Aviator Signals! Got questions? - whatsapp admin on 0704845040."
+        )

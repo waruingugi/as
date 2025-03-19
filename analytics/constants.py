@@ -63,8 +63,8 @@ OVER_20X_SUGGESTIONS = {
     ],
     "MODERATE": [
         "Moderate 20x shot. Bet if you feel confident.",
-        "Fair chance for 20x. Make your move wisely.",
-        "20x could happen. Bet small or wait it out.",
+        "Fair chance for a 20x. Make your move wisely.",
+        "20x could happen soon. Bet small or wait it out.",
         "Decent odds. Your call on how to play this.",
         "Moderate chance. Bet now or hold off, your pick.",
     ],

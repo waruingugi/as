@@ -88,12 +88,17 @@ def reboot_worker(worker_id) -> None:
             if response.status_code == 200:
                 logger.info(f"Successfully rebooted worker pod: {pod_name}")
 
-                worker_cache = CacheKeys.REBOOTED_WORKER.format(worker_id)
                 # Cache the worker ID for 2 minutes to prevent multiple reboots within a short time
                 # We use 2 minutes, as 3 minutes is the minimum schedule time for all tasks:
                 # - find_failing_workers_task
                 # - identify_similar_workers_task
+                worker_cache = CacheKeys.REBOOTED_WORKER.format(worker_id)
                 cache.set(worker_cache, True, timeout=60 * 2)
+
+                # Cache the worker ID for 10 minutes (roughly 20 payouts)
+                # to allow probabilities to stabilize
+                worker_health_cache = CacheKeys.WORKER_IS_HEALTHY.format(worker_id)
+                cache.set(worker_health_cache, False, timeout=60 * 10)
             else:
                 logger.error(
                     f"Failed to reboot worker pod: {pod_name}. "

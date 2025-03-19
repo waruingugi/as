@@ -54,9 +54,10 @@ class WorkersHealthView(APIView):
         if workers.exists():
             data = []
             for worker in workers:
-                worker_status = "ok"
-                if cache.get(CacheKeys.REBOOTED_WORKER.format(worker.id)):
-                    worker_status = "error"
+                worker_is_healthy = cache.get(
+                    CacheKeys.WORKER_IS_HEALTHY.format(worker.id), True
+                )
+                worker_status = "ok" if worker_is_healthy else "error"
 
                 data.append(
                     {

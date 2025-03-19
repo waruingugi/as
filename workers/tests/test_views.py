@@ -182,7 +182,9 @@ class WorkersHealthViewTests(UserBaseAPITestCase):
         self.assertEqual(response.data[0]["status"], "ok")
 
     def test_worker_health_status_error(self) -> None:
-        cache.set(CacheKeys.REBOOTED_WORKER.format(self.worker.id), True)
+        cache.set(
+            CacheKeys.WORKER_IS_HEALTHY.format(self.worker.id), False, timeout=60 * 10
+        )
         response = self.client.get(self.health_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data[0]["status"], "error")

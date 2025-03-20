@@ -81,6 +81,8 @@ class AuthTokenTestCase(APITestCase):
         self.user = User.objects.create_user(
             phone_number="+254701456761", password="StrongPassword123", is_active=True
         )
+        self.user.is_verified = True
+        self.user.save()
 
     def test_url_obtains_token_pair_successfully(self) -> None:
         """Assert endpoint returns access and refresh token."""
@@ -127,6 +129,26 @@ class AuthTokenTestCase(APITestCase):
         response = self.client.post(reverse("auth:obtain-token"), data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_access_denied_if_user_is_not_verified(self):
+        """Assert inactive user is denied login access."""
+        user = User.objects.create_user(
+            phone_number="+254701436763", password="StrongPassword123", is_active=False
+        )
+        user.is_active = True
+        user.is_verified = True
+        user.save()
+        data = {"phone_number": "+254701436763", "password": "StrongPassword123"}
+
+        # Assert active and verified user gains access
+        response = self.client.post(reverse("auth:obtain-token"), data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Assert active but unverified user is denied access
+        user.is_verified = False
+        user.save()
+        response = self.client.post(reverse("auth:obtain-token"), data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class OTPVerificationTestCase(APITestCase):
     def setUp(self) -> None:
@@ -162,6 +184,9 @@ class OTPVerificationTestCase(APITestCase):
 class ResendOTPVerificationTestCase(UserBaseAPITestCase):
     def setUp(self) -> None:
         self.user = self.create_user()
+        self.user.is_verified = False
+        self.user.save()
+
         self.url = reverse("auth:resend-otp")
         self.data = {"phone_number": str(self.user.phone_number)}
 

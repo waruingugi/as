@@ -122,6 +122,12 @@ class PasswordResetRequestView(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             phone_number = serializer.validated_data["phone_number"]
+
+            # De-verify user. OTP will be sent to re-verify
+            user = User.objects.get(phone_number=phone_number)
+            user.is_verified = False
+            user.save()
+
             otp = create_otp(phone_number)
 
             message = Message.OTP_SMS.value.format(otp)

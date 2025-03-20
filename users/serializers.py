@@ -1,6 +1,7 @@
 from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from commons.errors import ErrorCodes
@@ -29,6 +30,9 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         )
 
         data = super().validate(attrs)
+
+        if not self.user.is_verified:  # Check if user is verified
+            raise AuthenticationFailed("This account is not verified.")
 
         token = self.get_token(self.user)
 

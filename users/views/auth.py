@@ -6,8 +6,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from commons.constants import Message
-from commons.tasks import send_sms_task
+from commons.constants import Message, PushNotification
+from commons.tasks import send_push_task, send_sms_task
 from commons.throttles import AuthenticationThrottle
 from commons.utils import md5_hash
 from notifications.constants import NotificationType
@@ -52,14 +52,14 @@ class RegisterView(CreateAPIView):
             phone_number=phone_number, type=NotificationType.OTP.value, message=message
         )
 
-        # Disable OneSignal for now, build FCM instead
+        # TODO: Disable OneSignal, build FCM instead
         # Send Push Notification Welcome Message
-        # send_push_task.delay(
-        #     type=NotificationType.MARKETING.value,
-        #     title=PushNotification.WELCOME_MESSAGE.title,
-        #     message=PushNotification.WELCOME_MESSAGE.message,
-        #     user_id=user.id,
-        # )
+        send_push_task.delay(
+            type=NotificationType.MARKETING.value,
+            title=PushNotification.WELCOME_MESSAGE.title,
+            message=PushNotification.WELCOME_MESSAGE.message,
+            user_id=user.id,
+        )
 
         return user
 

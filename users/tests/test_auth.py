@@ -89,12 +89,17 @@ class AuthTokenTestCase(APITestCase):
         url = reverse("auth:obtain-token")
         data = {"phone_number": self.user.phone_number, "password": "StrongPassword123"}
         response = self.client.post(url, data)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("user_id", response.data)
         self.assertIn("access", response.data)
         self.assertIn("refresh", response.data)
-        self.access_token = response.data["access"]
-        self.refresh_token = response.data["refresh"]
+
+        self.access_token = response.data["access"]  # Don't remove this line
+        self.refresh_token = response.data["refresh"]  # Don't remove this line
+
+        self.user.refresh_from_db()
+        self.assertIsNotNone(self.user.last_login)
 
     def test_url_obtains_token_pair_using_national_number(self) -> None:
         """Assert endpoint standardizes phone number to required format."""
@@ -226,6 +231,9 @@ class PasswordResetTestCase(APITestCase):
         self.user = User.objects.create_user(
             phone_number=self.phone_number, password="StrongPassword123"
         )
+        self.user.is_verified = True
+        self.user.save()
+
         self.password_reset_url = reverse("auth:password-reset-request")
         self.password_reset_confirm_url = reverse("auth:password-reset-confirm")
 
@@ -261,6 +269,9 @@ class PasswordResetTestCase(APITestCase):
         # Verify that the password has actually been changed
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password(new_password))
+
+        # Assert that the user is verified
+        self.assertTrue(self.user.is_verified)
 
     def test_view_fails_to_reset_password(self):
         """Assert view fails to reset the password if OTP is invalid."""

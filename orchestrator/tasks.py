@@ -79,9 +79,57 @@ def find_failing_workers():
             if not recent_crash or recent_crash < five_minutes_ago:
                 # Worker has not posted any crash in the last 5 minutes
                 logger.info(
-                    f"Worker {worker.name} has been inactive since {recent_crash}. Rebooting..."
+                    f"Worker {worker.app}-{worker.name} has been inactive since {recent_crash}. Rebooting..."
                 )
                 reboot_worker(worker.id)
 
     except Exception as e:
         logger.error(f"Error: {str(e)}")
+
+
+# @shared_task
+# def find_failing_workers():
+#     """
+#     Check if any worker is stale (worker is not posting payouts) for 5 minutes,
+#     and reboot the worker if necessary.
+#     """
+#     logger.info("Starting task to find failed workers...")
+#
+#     CPU_THRESHOLD = 0.6  # Any worker with CPU usage below 0.5 cores will be rebooted
+#
+#     # Disable SSL warnings
+#     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+#
+#     metrics_url = f"{KUBERNETES_API_BASE_URL}/apis/metrics.k8s.io/v1beta1/pods/"
+#     headers = {
+#         "Authorization": f"Bearer {KUBERNETES_TOKEN}",
+#     }
+#     response = requests.get(metrics_url, headers=headers, verify=False)
+#
+#     if response.status_code == status.HTTP_200_OK:
+#         pods = response.json().get("items", [])
+#         valid_namespaces = [app.lower() for app in BettingApp.list()]
+#
+#         for pod in pods:
+#             pod_name = pod.get("metadata", {}).get("name", "")
+#             namespace = pod.get("metadata", {}).get("namespace", "")
+#             cpu_usage = pod.get("containers", [])[0].get("usage", {}).get("cpu", "")
+#
+#             if namespace in valid_namespaces:
+#                 if cpu_usage and float(cpu_usage.rstrip("n")) < CPU_THRESHOLD * 1e9:  # Convert 0.5 to nanocores
+#                     logger.info(f"Pod {pod_name} CPU usage is below {CPU_THRESHOLD} cores. Taking action...")
+#
+#                     # Extract seed number from pod name
+#                     seed_number = pod_name.split("-")[-1]
+#                     app_name = namespace.upper()
+#
+#                     # Find the corresponding worker
+#                     worker_name = f"Seed {seed_number.zfill(2)}"
+#                     try:
+#                         worker = Worker.objects.get(name=worker_name, app=app_name)
+#                         reboot_worker(worker.id)
+#                     except Worker.DoesNotExist:
+#                         logger.error(f"No worker found for pod {pod_name} with name {worker_name} and app {app_name}")
+#
+#     else:
+#         logger.error(f"Failed to fetch pod metrics. Status code: {response.status_code}, Response: {response.text}")

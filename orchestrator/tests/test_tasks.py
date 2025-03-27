@@ -104,3 +104,110 @@ class TestFindFailingWorkers(TestCase):
 
         # Assertions
         mock_reboot_worker.assert_called_once_with(worker.id)
+
+
+#
+# import json
+# from unittest import TestCase
+# from unittest.mock import patch, MagicMock
+#
+# from orchestrator.tasks import find_failing_workers
+#
+#
+# @patch("orchestrator.tasks.requests.get")
+# @patch("orchestrator.tasks.Worker.objects.get")
+# @patch("orchestrator.tasks.reboot_worker")
+# @patch("orchestrator.tasks.BettingApp.list", return_value=["betgr8"])
+# class TestFindFailingWorkers(TestCase):
+#     def setUp(self):
+#         self.mock_response = MagicMock()
+#         self.mock_response.status_code = 200
+#         self.mock_response.json.return_value = {
+#             "kind": "PodMetricsList",
+#             "apiVersion": "metrics.k8s.io/v1beta1",
+#             "metadata": {},
+#             "items": [
+#                 {
+#                     "metadata": {
+#                         "name": "betgr8-seed-0",
+#                         "namespace": "betgr8",
+#                     },
+#                     "containers": [
+#                         {
+#                             "name": "chrome-browser",
+#                             "usage": {
+#                                 "cpu": "998546457n",  # CPU usage above 0.5 cores
+#                             }
+#                         }
+#                     ]
+#                 },
+#                 {
+#                     "metadata": {
+#                         "name": "betgr8-seed-1",
+#                         "namespace": "betgr8",
+#                     },
+#                     "containers": [
+#                         {
+#                             "name": "chrome-browser",
+#                             "usage": {
+#                                 "cpu": "998337018n",  # CPU usage above 0.5 cores
+#                             }
+#                         }
+#                     ]
+#                 }
+#             ]
+#         }
+#
+#     def test_all_workers_cpu_above_threshold(self, mock_app_list, mock_reboot_worker, mock_worker_get, mock_request):
+#         mock_request.return_value = self.mock_response
+#
+#         find_failing_workers()
+#
+#         mock_request.assert_called_once()
+#         mock_worker_get.assert_not_called()
+#         mock_reboot_worker.assert_not_called()
+#
+#     def test_some_pods_cpu_below_threshold(self, mock_app_list, mock_reboot_worker, mock_worker_get, mock_request):
+#         self.mock_response.json.return_value["items"][0]["containers"][0]["usage"]["cpu"] = "400000000n"  # CPU usage below 0.5 cores
+#         mock_request.return_value = self.mock_response
+#
+#         mock_worker = MagicMock()
+#         mock_worker.id = 1
+#         mock_worker_get.return_value = mock_worker
+#
+#         find_failing_workers()
+#
+#         mock_request.assert_called_once()
+#         mock_worker_get.assert_called_once_with(name="Seed 00", app="BETGR8")
+#         mock_reboot_worker.assert_called_once_with(mock_worker.id)
+#
+#     def test_only_pods_in_bettingapp_list_are_rebooted(self, mock_app_list, mock_reboot_worker, mock_worker_get, mock_request):
+#         self.mock_response.json.return_value["items"].append(
+#             {
+#                 "metadata": {
+#                     "name": "otherapp-seed-0",
+#                     "namespace": "otherapp",
+#                 },
+#                 "containers": [
+#                     {
+#                         "name": "chrome-browser",
+#                         "usage": {
+#                             "cpu": "400000000n",  # CPU usage below 0.5 cores
+#                         }
+#                     }
+#                 ]
+#             }
+#         )
+#
+#         mock_request.return_value.status_code = 200
+#         mock_request.return_value = self.mock_response
+#
+#         mock_worker = MagicMock()
+#         mock_worker.id = 1
+#         mock_worker_get.return_value = mock_worker
+#
+#         find_failing_workers()
+#
+#         mock_reboot_worker.assert_not_called()
+#         mock_worker_get.assert_not_called()
+#         mock_request.assert_called_once()

@@ -202,4 +202,9 @@ kubectl get clusterrole,clusterrolebinding,secret -A -o json | jq -r '
   | "kubectl annotate " + .kind + " " + .metadata.name + " meta.helm.sh/release-name=<app>-workers meta.helm.sh/release-namespace=default --overwrite"
 ' | bash
 ```
-where `<app>` is the name of the app you are deploying.
+where `<app>` is the name of the app you are deploying.  
+
+or you can simply opt to delete the secret token and recreate it BUT remember to update the token on the server:  
+```
+kubectl delete serviceaccount pod-restart-sa -n default
+```

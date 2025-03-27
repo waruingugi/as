@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 
 import requests
+import urllib3
 from django.conf import settings
 from django.core.cache import cache
 
@@ -79,6 +80,9 @@ def reboot_worker(worker_id) -> None:
             # Construct the request URL
             url = f"{kubernetes_base_url}/api/v1/namespaces/{app_name}/pods/{pod_name}"
 
+            # Disable SSL warnings
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
             # Set up headers
             headers = {"Authorization": f"Bearer {kubernetes_token}"}
 
@@ -89,8 +93,7 @@ def reboot_worker(worker_id) -> None:
                 logger.info(f"Successfully rebooted worker pod: {pod_name}")
 
                 # Cache the worker ID for 2 minutes to prevent multiple reboots within a short time
-                # We use 2 minutes, as 3 minutes is the minimum schedule time for all tasks:
-                # - find_failing_workers_task
+                # We use 2 minutes, as 3 minutes is the minimum schedule time for task:
                 # - identify_similar_workers_task
                 worker_cache = CacheKeys.REBOOTED_WORKER.format(worker_id)
                 cache.set(worker_cache, True, timeout=60 * 2)

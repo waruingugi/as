@@ -27,9 +27,9 @@ services:
   servicePrefix: "{{ .Values.app }}-svc"  # Prefix for Service names
 
 # Token Secret Configuration (Super Admin)
-apiTokenSecret:
-  name: pod-restart-token
-  namespace: default  # Always in the default namespace
+#apiTokenSecret:
+#  name: pod-restart-token
+#  namespace: default  # Always in the default namespace
 
 
 # Docker Registry Configuration

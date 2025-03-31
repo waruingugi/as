@@ -25,6 +25,7 @@ class BettingApp(str, Enum):
 
     BETIKA = "BETIKA"
     BETGR8 = "BETGR8"
+    ODIBETS = "ODIBETS"
 
     @staticmethod
     def list():

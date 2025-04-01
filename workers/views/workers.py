@@ -1,7 +1,12 @@
 from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status
-from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import (
+    CreateAPIView,
+    DestroyAPIView,
+    ListAPIView,
+    RetrieveUpdateAPIView,
+)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -39,6 +44,13 @@ class WorkerListView(ListAPIView):
 
 
 class WorkerRetrieveUpdateView(RetrieveUpdateAPIView):
+    lookup_field = "id"
+    queryset = Worker.objects.all()
+    serializer_class = WorkerUpdateSerializer
+    permission_classes = [IsStaffPermission]
+
+
+class WorkerDeleteView(DestroyAPIView):
     lookup_field = "id"
     queryset = Worker.objects.all()
     serializer_class = WorkerUpdateSerializer

@@ -206,5 +206,5 @@ where `<app>` is the name of the app you are deploying.
 
 or you can simply opt to delete the secret token and recreate it BUT remember to update the token on the server:  
 ```
-kubectl delete serviceaccount pod-restart-sa -n default
+kubectl delete serviceaccount pod-restart-role -n default
 ```

@@ -4,6 +4,7 @@ from rest_framework import status
 
 from commons.constants import BettingApp, CacheKeys, SeedName
 from commons.tests.test_base import UserBaseAPITestCase
+from observers.models import Multiplier
 from workers.models import Worker
 from workers.serializers import WorkerListSerializer
 
@@ -194,3 +195,24 @@ class WorkersHealthViewTests(UserBaseAPITestCase):
         response = self.client.get(self.health_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data["detail"], "No workers found")
+
+
+class WorkerDeleteViewTests(UserBaseAPITestCase):
+    def setUp(self):
+        self.worker = Worker.objects.create(
+            app=BettingApp.BETIKA.value, name=SeedName.list()[0]
+        )
+        self.multiplier1 = Multiplier.objects.create(crash=1.25, worker=self.worker)
+        self.multiplier2 = Multiplier.objects.create(crash=3.75, worker=self.worker)
+        self.delete_url = reverse("workers:delete", args=[self.worker.id])
+
+        self.force_authenticate_staff_user()
+
+    def test_delete_worker(self):
+        response = self.client.delete(self.delete_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Worker.objects.filter(id=self.worker.id).exists())
+
+    def test_cascade_delete_multipliers(self):
+        self.client.delete(self.delete_url)
+        self.assertFalse(Multiplier.objects.filter(worker=self.worker).exists())

@@ -19,30 +19,54 @@ from users.validators import (
 
 class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
     default_error_messages = {
-        "no_active_account": _(ErrorCodes.INCORRECT_USERNAME_OR_PASSWORD.value)
+        "invalid_credentials": _(
+            "The phone number or password is incorrect. Please try again."
+        ),
+        "inactive_account": _(
+            "This account has been deactivated. Please contact support."
+        ),
+        "unverified_account": _(
+            "This account is not verified. Please check your SMS or email."
+        ),
     }
 
     def validate(self, attrs):
-        """Change phone number to standard format"""
         phone_field = UserPhoneNumberField()
-        # Username is phone number field(as specified in User model)
-        attrs[self.username_field] = phone_field.to_internal_value(
-            attrs[self.username_field]
-        )
+        phone_number = phone_field.to_internal_value(attrs.get(self.username_field))
+        password = attrs.get("password")
 
+        try:
+            user = User.objects.get(phone_number=phone_number)
+        except User.DoesNotExist:
+            raise AuthenticationFailed(
+                self.error_messages["invalid_credentials"], code="invalid_credentials"
+            )
+
+        if not user.check_password(password):
+            raise AuthenticationFailed(
+                self.error_messages["invalid_credentials"], code="invalid_credentials"
+            )
+
+        if not user.is_active:
+            raise AuthenticationFailed(
+                self.error_messages["inactive_account"], code="inactive_account"
+            )
+
+        if not user.is_verified:
+            raise AuthenticationFailed(
+                self.error_messages["unverified_account"], code="unverified_account"
+            )
+
+        # All checks passed — call super().validate to generate tokens
+        attrs[self.username_field] = phone_number
         data = super().validate(attrs)
 
-        if not self.user.is_verified:  # Check if user is verified
-            raise AuthenticationFailed("This account is not verified.")
-
         token = self.get_token(self.user)
-
         data["refresh"] = str(token)
         data["access"] = str(token.access_token)
         data["exp"] = token.payload["exp"]
         data["user_id"] = token.payload["user_id"]
 
-        # Update last login
         update_last_login(None, self.user)
 
         return data

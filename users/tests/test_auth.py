@@ -133,6 +133,10 @@ class AuthTokenTestCase(APITestCase):
 
         response = self.client.post(reverse("auth:obtain-token"), data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data["detail"],
+            "This account has been deactivated. Please contact support.",
+        )
 
     def test_access_denied_if_user_is_not_verified(self):
         """Assert inactive user is denied login access."""
@@ -153,6 +157,16 @@ class AuthTokenTestCase(APITestCase):
         user.save()
         response = self.client.post(reverse("auth:obtain-token"), data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_access_denied_if_wrong_password_entered(self) -> None:
+        """Assert user is denied access if wrong password is entered."""
+        data = {"phone_number": "+254701456761", "password": "wrong_password"}
+        response = self.client.post(reverse("auth:obtain-token"), data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data["detail"],
+            "The phone number or password is incorrect. Please try again.",
+        )
 
 
 class OTPVerificationTestCase(APITestCase):

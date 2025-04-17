@@ -3,7 +3,6 @@ from django.core.cache import cache
 from commons.constants import (
     DEFAULT_CACHE_DURATION,
     MULTIPLIER_PAGE_SIZE,
-    PAGE_SIZE,
     CacheKeys,
 )
 from commons.logger import logger
@@ -37,13 +36,14 @@ def get_new_multipliers(
 def refresh_worker_crash_query(instances) -> None:
     worker_ids = {instance.worker_id for instance in instances}
     for worker_id in worker_ids:
-        get_worker_crash_list(worker_id, PAGE_SIZE)
+        get_worker_crash_list(worker_id, MULTIPLIER_PAGE_SIZE)
 
 
 def get_worker_crash_list(worker_id: str, count: int) -> list:
     """
     Fetch the last `count` crashes for a worker from the database.
     """
+    logger.info(f"Get worker crash list for worker:{worker_id} with count:{count}")
     multipliers_qs = Multiplier.objects.filter(worker_id=worker_id).order_by(
         "-created_at"
     )[:count]
@@ -65,6 +65,7 @@ def get_worker_crash_list(worker_id: str, count: int) -> list:
 def get_workers_crash_history(
     app: str, count: int = MULTIPLIER_PAGE_SIZE, recompute: bool = False
 ) -> list:
+    logger.info(f"Get workers crash history for app:{app} with count:{count}")
     workers = Worker.objects.filter(app=app)
     if not workers.exists():  # Handle empty queryset
         return []

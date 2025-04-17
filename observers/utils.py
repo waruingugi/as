@@ -1,6 +1,11 @@
 from django.core.cache import cache
 
-from commons.constants import DEFAULT_CACHE_DURATION, PAGE_SIZE, CacheKeys
+from commons.constants import (
+    DEFAULT_CACHE_DURATION,
+    MULTIPLIER_PAGE_SIZE,
+    PAGE_SIZE,
+    CacheKeys,
+)
 from commons.logger import logger
 from observers.models import Multiplier
 from workers.models import Worker
@@ -58,7 +63,7 @@ def get_worker_crash_list(worker_id: str, count: int) -> list:
 
 
 def get_workers_crash_history(
-    app: str, count: int = PAGE_SIZE, recompute: bool = False
+    app: str, count: int = MULTIPLIER_PAGE_SIZE, recompute: bool = False
 ) -> list:
     workers = Worker.objects.filter(app=app)
     if not workers.exists():  # Handle empty queryset

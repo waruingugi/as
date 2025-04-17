@@ -18,6 +18,7 @@ DEFAULT_CACHE_DURATION: int = 300  # 5 minutes
 
 # PAGE SIZE
 PAGE_SIZE: int = 50
+MULTIPLIER_PAGE_SIZE: int = 150
 
 
 class BettingApp(str, Enum):

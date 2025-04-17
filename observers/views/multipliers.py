@@ -2,10 +2,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.generics import CreateAPIView, ListAPIView
 
-from commons.pagination import StandardPageNumberPagination
+from commons.pagination import (
+    MultiplierPageNumberPagination,
+    StandardPageNumberPagination,
+)
 from commons.permissions import IsStaffPermission, IsWorkerPermission
 from observers.models import Multiplier
-from observers.serializers import MultiplierCreateSerializer, MultiplierReadSerializer
+from observers.serializers import MultiplierCreateSerializer
 from observers.utils import get_new_multipliers
 
 
@@ -28,7 +31,7 @@ class MultiplierCreateView(CreateAPIView):
 
 class MultiplierListView(ListAPIView):
     queryset = Multiplier.objects.all()
-    serializer_class = MultiplierReadSerializer
+    serializer_class = MultiplierPageNumberPagination
     permission_classes = [IsStaffPermission]
     pagination_class = StandardPageNumberPagination
     filter_backends = [

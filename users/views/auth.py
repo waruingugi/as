@@ -11,7 +11,7 @@ from commons.tasks import send_push_task, send_sms_task
 from commons.throttles import AuthenticationThrottle
 from commons.utils import md5_hash
 from notifications.constants import NotificationType
-from users.models import User
+from users.models import SignalSetting, User
 from users.otp import create_otp
 from users.serializers import (
     OTPVerificationSerializer,
@@ -21,6 +21,7 @@ from users.serializers import (
     UserCreateSerializer,
     UserTokenObtainPairSerializer,
 )
+from users.utils import generate_default_signal_pref
 
 
 @extend_schema(tags=["auth"])
@@ -59,6 +60,11 @@ class RegisterView(CreateAPIView):
             title=PushNotification.WELCOME_MESSAGE.title,
             message=PushNotification.WELCOME_MESSAGE.message,
             user_id=user.id,
+        )
+
+        # Create default signal settings for the user
+        SignalSetting.objects.create(
+            user=user, preference=generate_default_signal_pref()
         )
 
         return user

@@ -75,6 +75,21 @@ class RegisterViewTestCase(APITestCase):
         # Clear the throttle cache
         AuthenticationThrottle.cache.clear()
 
+    @patch("users.views.auth.send_push_task.delay")
+    @patch("users.views.auth.send_sms_task.delay")
+    def test_default_signals_setting_created_on_registration(
+        self, send_sms_mock, _
+    ) -> None:
+        """Assert default signals setting is created on user registration."""
+        data = {"phone_number": "+254701234567", "password": "passwordAl123"}
+        response = self.client.post(reverse("auth:register"), data)
+
+        self.assertEqual(response.status_code, 201)
+        user = User.objects.get(phone_number=data["phone_number"])
+        self.assertIsNotNone(
+            user.signal_settings
+        )  # Check if default signals setting exists
+
 
 class AuthTokenTestCase(APITestCase):
     def setUp(self) -> None:

@@ -3,6 +3,7 @@ from uuid import uuid4
 from django.test import TestCase
 
 from commons.constants import User
+from users.models import SignalSetting
 
 
 class UserModelTests(TestCase):
@@ -58,3 +59,25 @@ class UserModelTests(TestCase):
         self.assertIsNotNone(user.username)
         self.assertNotEqual(user.username, "")
         self.assertIsInstance(user.username, str)
+
+
+class SignalSettingModelTests(TestCase):
+    def setUp(self) -> None:
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            phone_number="+254701301401",
+            password=uuid4().hex,
+            username="testuser",
+        )
+        self.signal_setting = SignalSetting.objects.create(user=self.user)
+
+    def test_signal_setting_creation(self) -> None:
+        """Test that a SignalSetting instance is created correctly."""
+        self.assertEqual(self.signal_setting.user, self.user)
+        self.assertIsNone(self.signal_setting.preference)
+
+    def test_signal_setting_str_representation(self) -> None:
+        """Test the string representation of the SignalSetting model."""
+        self.assertEqual(
+            str(self.signal_setting), f"{self.user} - {self.signal_setting.preference}"
+        )

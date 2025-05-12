@@ -1,12 +1,12 @@
 from django.db import models
 
-from commons.constants import BettingApp, SeedName
+from commons.constants import SeedName
 from commons.models import Base
 from commons.utils import generate_uuid
 
 
 class Worker(Base):
-    app = models.CharField(max_length=255, choices=BettingApp.choices())
+    app = models.CharField(max_length=255, null=False, blank=False)
     name = models.CharField(max_length=255, choices=SeedName.choices())
     key = models.CharField(
         max_length=255, default=generate_uuid, unique=True, null=False

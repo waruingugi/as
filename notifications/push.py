@@ -65,7 +65,7 @@ class OneSignalPush:
             return False
 
         except Exception as e:
-            logger.error(f"Exception occured while sending push to {user_id}: {e}")
+            logger.error(f"Exception occurred while sending push to {user_id}: {e}")
             return False
 
 

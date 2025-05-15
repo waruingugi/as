@@ -8,7 +8,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from commons.errors import ErrorCodes
 from commons.serializers import UserPhoneNumberField
 from users.constants import TOTP_LENGTH
-from users.models import User
+from users.models import SignalSetting, User
 from users.validators import (
     OTPValidator,
     PhoneNumberExistsValidator,
@@ -26,7 +26,7 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
             "This account has been deactivated. Please contact support."
         ),
         "unverified_account": _(
-            "This account is not verified. Please check your SMS or email."
+            "This account is not verified. Please contact support."
         ),
     }
 
@@ -243,3 +243,10 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
             phone_number=data.get("phone_number"), otp_code=data.get("otp")
         )
         return data
+
+
+class SignalSettingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SignalSetting
+        fields = "__all__"
+        read_only_fields = ("created_at", "updated_at", "user")

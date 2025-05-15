@@ -1,11 +1,14 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
+from rest_framework import filters, status
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAPIView
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
 from commons.pagination import StandardPageNumberPagination
 from commons.permissions import IsStaffOrSelfPermission, IsStaffPermission
-from users.models import User
+from users.models import SignalSetting, User
 from users.serializers import (
+    SignalSettingSerializer,
     StaffUserCreateSerializer,
     StaffUserRetrieveUpdateSerializer,
     UserListSerializer,
@@ -49,3 +52,29 @@ class UserRetrieveUpdateView(RetrieveUpdateAPIView):
         if self.request.user.is_staff:
             return StaffUserRetrieveUpdateSerializer
         return UserRetrieveUpdateSerializer
+
+
+class SignalSettingViewSet(ModelViewSet):
+    """
+    ViewSet for SignalSetting model.
+    """
+
+    queryset = SignalSetting.objects.all()
+    serializer_class = SignalSettingSerializer
+    permission_classes = [IsStaffOrSelfPermission]
+    lookup_field = "id"
+
+    def get_queryset(self):
+        # Staff can view all SignalSettings
+        if self.request.user.is_staff:
+            return self.queryset
+        # Regular users can only view their own SignalSetting
+        return self.queryset.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        """Override the create to associate the SignalSetting with the requesting user."""
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

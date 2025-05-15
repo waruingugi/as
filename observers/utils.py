@@ -85,3 +85,37 @@ def get_workers_crash_history(
         data.append({"id": worker.id, "name": worker.name, "crash": crash_list})
 
     return data
+
+
+class SignalNotificationMonitor:
+    """
+    Monitor for signal notifications.
+    """
+
+    SIGNAL_NOTIFICATION_TRIGGERS = (80, 85, 90, 95)
+    RESET_AT_TRIGGER = 50
+
+    def __init__(self) -> None:
+        self.thresholds = self.SIGNAL_NOTIFICATION_TRIGGERS
+        self.trigger_signal_flags = {}
+        self.batch_reset_trigger_flags()
+
+    def batch_reset_trigger_flags(self) -> None:
+        for threshold in self.thresholds:
+            self.trigger_signal_flags[threshold] = False
+
+    def __call__(self, instances) -> None:
+        # Pop most recent instance
+        instance = instances[-1]
+        payout = int(instance.payout)
+
+        if payout <= self.RESET_AT_TRIGGER:
+            self.batch_reset_trigger_flags()
+            return
+
+        elif payout in self.thresholds:
+            if not self.trigger_signal_flags[payout]:
+                self.trigger_signal_flags[payout] = True
+                logger.info(f"Signal notification triggered for payout: {payout}x")
+        else:
+            pass

@@ -21,7 +21,7 @@ from users.serializers import (
     UserCreateSerializer,
     UserTokenObtainPairSerializer,
 )
-from users.utils import generate_default_signal_pref
+from users.utils import default_signal_preference
 
 
 @extend_schema(tags=["auth"])
@@ -53,7 +53,6 @@ class RegisterView(CreateAPIView):
             phone_number=phone_number, type=NotificationType.OTP.value, message=message
         )
 
-        # TODO: Disable OneSignal, build FCM instead
         # Send Push Notification Welcome Message
         send_push_task.delay(
             type=NotificationType.MARKETING.value,
@@ -63,9 +62,7 @@ class RegisterView(CreateAPIView):
         )
 
         # Create default signal settings for the user
-        SignalSetting.objects.create(
-            user=user, preference=generate_default_signal_pref()
-        )
+        SignalSetting.objects.create(user=user, preference=default_signal_preference())
 
         return user
 

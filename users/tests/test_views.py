@@ -3,7 +3,8 @@ from rest_framework import status
 
 from commons.tests.test_base import UserBaseAPITestCase
 from users.constants import MAX_USERNAME_LEN, MIN_USERNAME_LEN
-from users.models import User
+from users.models import SignalSetting, User
+from users.utils import default_signal_preference
 
 
 class UserCreateViewTests(UserBaseAPITestCase):
@@ -215,3 +216,89 @@ class UserListAPIViewTests(UserBaseAPITestCase):
 
     #     response = client.get(self.list_url)
     #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+# Add these tests to your test file
+
+
+class SignalSettingViewSetTests(UserBaseAPITestCase):
+    def setUp(self) -> None:
+        self.user = self.create_user()
+        self.staff_user = self.create_staff_user()
+        self.signal_setting = SignalSetting.objects.create(
+            user=self.user, preference=default_signal_preference()
+        )
+        self.url = reverse("users:signal-settings")
+        self.detail_url = reverse(
+            "users:signal-settings-detail", kwargs={"id": self.signal_setting.id}
+        )
+
+    def test_staff_can_view_all_signal_settings(self) -> None:
+        """Assert staff users can view all SignalSettings."""
+        self.force_authenticate_staff_user()
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], SignalSetting.objects.count())
+
+    def test_user_can_view_own_signal_settings(self) -> None:
+        """Assert regular users can only view their own SignalSettings."""
+        self.force_authenticate_user()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["results"][0]["id"], str(self.signal_setting.id))
+
+    def test_user_cannot_view_others_signal_settings(self) -> None:
+        """Assert regular users cannot view SignalSettings of other users."""
+        foreign_user = self.create_foreign_user()
+        self.client.force_authenticate(user=foreign_user)
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 0)
+
+    def test_staff_can_view_specific_signal_setting(self) -> None:
+        """Assert staff users can view any specific SignalSetting."""
+        self.force_authenticate_user()
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], str(self.signal_setting.id))
+
+    def test_user_can_view_own_specific_signal_setting(self) -> None:
+        """Assert regular users can view their own specific SignalSetting."""
+        self.force_authenticate_user()
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], str(self.signal_setting.id))
+
+    def test_user_can_create_signal_setting(self) -> None:
+        """Assert regular users can create their own SignalSetting."""
+        SignalSetting.objects.filter(
+            user=self.user
+        ).delete()  # Ensure no existing settings
+        self.force_authenticate_user()
+        data = {"preference": default_signal_preference()}
+        response = self.client.post(self.url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["user"], self.user.id)
+        self.assertEqual(response.data["preference"], default_signal_preference())
+
+    def test_user_can_update_own_signal_preference(self) -> None:
+        """Assert regular users can update their own SignalSetting preference."""
+        self.force_authenticate_user()
+        data = {"preference": {"BETGR8": {"subscribed": True, "trigger": 90}}}
+        response = self.client.put(self.detail_url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.signal_setting.refresh_from_db()
+        self.assertEqual(self.signal_setting.preference, data["preference"])
+
+    def test_user_cannot_update_others_signal_preference(self) -> None:
+        """Assert regular users cannot update the SignalSetting preference of other users."""
+        foreign_user = self.create_foreign_user()
+        self.client.force_authenticate(user=foreign_user)
+        data = {"preference": {"BETGR8": {"subscribed": True, "trigger": 90}}}
+        response = self.client.put(self.detail_url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from users.utils import generate_default_signal_pref
+from users.utils import default_signal_preference
 
 
 class TestGenerateDefaultSignalPref(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestGenerateDefaultSignalPref(unittest.TestCase):
         mock_betting_app_list.return_value = ["App1", "App2", "App3"]
 
         # Call the function
-        result = generate_default_signal_pref()
+        result = default_signal_preference()
 
         # Expected result
         expected_result = {

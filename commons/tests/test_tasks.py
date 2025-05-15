@@ -1,12 +1,13 @@
-import unittest
 from collections import defaultdict
 from unittest.mock import MagicMock, patch
+
+from django.test import TestCase
 
 from commons.constants import CacheKeys
 from commons.tasks import refresh_users_signal_settings
 
 
-class TestRefreshUsersSignalSettings(unittest.TestCase):
+class TestRefreshUsersSignalSettings(TestCase):
     @patch("commons.tasks.SignalSetting.objects.select_related")
     @patch("commons.tasks.BettingApp.list")
     @patch("commons.tasks.cache.set")

@@ -79,7 +79,4 @@ def refresh_users_signal_settings():
     cache.set(
         CacheKeys.USERS_SIGNAL_SETTINGS, users_signal_prefs, timeout=60 * 60 * 24
     )  # Cache for 24 hours
-
-    # {'id': 'ed71d878-0aa4-48ac-9599-aa92232e4c1e', 'created_at': '2025-05-15T09:30:04.162720',
-    #  'updated_at': '2025-05-15T09:30:04.170499', 'preference': {'BETGR8': {'subscribed': True, 'trigger': 90}},
-    #  'user': UUID('a823077a-0cb1-430b-a2eb-86899c01b2a5')}
+    logger.info("Users signal settings refreshed successfully.")

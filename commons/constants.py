@@ -63,6 +63,8 @@ class CacheKeys:
     WORKER_CRASH_QUERY = "worker_id:{}:query"
     WORKER_PROBABILITY_SUGGESTION = "worker_id:{}:over{}:suggestion"
 
+    USERS_SIGNAL_SETTINGS = "users_signal_settings:{}"
+
 
 class SeedName(str, Enum):
     """Seed name options."""
@@ -106,3 +108,7 @@ class PushNotification:
         message = (
             "Welcome to Aviator Signals! Got questions? - whatsapp admin on 0704845040."
         )
+
+
+# Trigger values(probabilities) for signal notifications
+SIGNAL_NOTIFICATION_TRIGGERS = (80, 85, 90, 95)

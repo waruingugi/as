@@ -28,4 +28,8 @@ app.conf.beat_schedule = {
         "task": "orchestrator.tasks.find_failing_workers",
         "schedule": crontab(minute="*/1"),
     },
+    "refresh_users_signal_settings": {
+        "task": "commons.tasks.refresh_users_signal_settings",
+        "schedule": crontab(hour=0, minute=0),
+    },
 }

@@ -3,6 +3,7 @@ from django.core.cache import cache
 from commons.constants import (
     DEFAULT_CACHE_DURATION,
     MULTIPLIER_PAGE_SIZE,
+    SIGNAL_NOTIFICATION_TRIGGERS,
     CacheKeys,
 )
 from commons.logger import logger
@@ -92,17 +93,20 @@ class SignalNotificationMonitor:
     Monitor for signal notifications.
     """
 
-    SIGNAL_NOTIFICATION_TRIGGERS = (80, 85, 90, 95)
     RESET_AT_TRIGGER = 50
 
     def __init__(self) -> None:
-        self.thresholds = self.SIGNAL_NOTIFICATION_TRIGGERS
+        self.thresholds = SIGNAL_NOTIFICATION_TRIGGERS
         self.trigger_signal_flags = {}
         self.batch_reset_trigger_flags()
 
     def batch_reset_trigger_flags(self) -> None:
         for threshold in self.thresholds:
-            self.trigger_signal_flags[threshold] = False
+            self.trigger_signal_flags[threshold] = {
+                "triggered": False,  # Has the signal been triggered?
+                "triggered_at": None,  # Time the signal was triggered
+                "triggered_by": None,  # The payout that triggered the signal
+            }
 
     def __call__(self, instances) -> None:
         # Pop most recent instance
@@ -114,8 +118,8 @@ class SignalNotificationMonitor:
             return
 
         elif payout in self.thresholds:
-            if not self.trigger_signal_flags[payout]:
-                self.trigger_signal_flags[payout] = True
+            if not self.trigger_signal_flags[payout]["triggered"]:
+                self.trigger_signal_flags[payout]["triggered"] = True
                 logger.info(f"Signal notification triggered for payout: {payout}x")
         else:
             pass

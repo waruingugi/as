@@ -1,8 +1,8 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from commons.utils import UserSignalSettingsCacheManager
 from users.models import SignalSetting
-from users.utils import UserSignalSettingsCacheManager
 
 
 @receiver(post_save, sender=SignalSetting)

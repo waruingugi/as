@@ -85,7 +85,7 @@ class UserSignalSettingsCacheManager:
                 or trigger not in SIGNAL_NOTIFICATION_TRIGGERS
             ):
                 self.users_signal_prefs.get(app, {}).get(trigger, set()).discard(
-                    self.instance.user_id
+                    str(self.instance.user_id)
                 )
 
     def _add_valid_preferences(self) -> None:
@@ -100,7 +100,7 @@ class UserSignalSettingsCacheManager:
             ):
                 self.users_signal_prefs.setdefault(app, {})
                 self.users_signal_prefs[app].setdefault(data["trigger"], set()).add(
-                    self.instance.user_id
+                    str(self.instance.user_id)
                 )
 
     def _save_cache(self) -> None:

@@ -1,6 +1,8 @@
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 
+from commons.constants import CacheKeys
 from commons.tests.test_base import UserBaseAPITestCase
 from users.constants import MAX_USERNAME_LEN, MIN_USERNAME_LEN
 from users.models import SignalSetting, User
@@ -273,16 +275,26 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
 
     def test_user_can_create_signal_setting(self) -> None:
         """Assert regular users can create their own SignalSetting."""
+        cache.delete(CacheKeys.USERS_SIGNAL_SETTINGS)  # Clear specific cache
         SignalSetting.objects.filter(
             user=self.user
         ).delete()  # Ensure no existing settings
         self.force_authenticate_user()
-        data = {"preference": default_signal_preference()}
+
+        preference = default_signal_preference()
+        preference["BETGR8"]["subscribed"] = True
+        preference["BETGR8"]["trigger"] = 90
+        data = {"preference": preference}
         response = self.client.post(self.url, data, format="json")
 
+        # Assert setting is saved to cache
+        cached_data = cache.get(CacheKeys.USERS_SIGNAL_SETTINGS)
+        self.assertIn(str(self.user.id), cached_data["BETGR8"][90])
+
+        # Assert response is correct
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["user"], self.user.id)
-        self.assertEqual(response.data["preference"], default_signal_preference())
+        self.assertEqual(response.data["preference"], preference)
 
     def test_user_can_update_own_signal_preference(self) -> None:
         """Assert regular users can update their own SignalSetting preference."""

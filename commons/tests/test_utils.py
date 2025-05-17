@@ -9,7 +9,8 @@ from commons.utils import UserSignalSettingsCacheManager
 class TestUserSignalSettingsCacheManager(TestCase):
     def setUp(self) -> None:
         self.mock_instance = MagicMock()
-        self.mock_instance.user_id = 1
+        self.user_id1, self.user_id2 = "1", "2"
+        self.mock_instance.user_id = self.user_id1
         self.trigger1 = SIGNAL_NOTIFICATION_TRIGGERS[0]
         self.trigger2 = SIGNAL_NOTIFICATION_TRIGGERS[1]
         self.mock_instance.preference = {
@@ -18,8 +19,8 @@ class TestUserSignalSettingsCacheManager(TestCase):
         }
 
         self.mock_cache_data = {
-            "app1": {self.trigger1: {1}},
-            "app2": {self.trigger2: {1}},
+            "app1": {self.trigger1: {self.user_id1}},
+            "app2": {self.trigger2: {self.user_id1}},
         }
 
     @patch("commons.utils.cache")
@@ -32,7 +33,7 @@ class TestUserSignalSettingsCacheManager(TestCase):
         mock_cache.set.assert_called_once_with(
             CacheKeys.USERS_SIGNAL_SETTINGS,
             {
-                "app1": {self.trigger1: {1}},
+                "app1": {self.trigger1: {self.user_id1}},
                 "app2": {self.trigger2: set()},
             },
             timeout=60 * 60 * 24,
@@ -48,8 +49,10 @@ class TestUserSignalSettingsCacheManager(TestCase):
 
         manager._remove_invalid_preferences()
 
-        self.assertIn(1, manager.users_signal_prefs["app1"][self.trigger1])
-        self.assertNotIn(1, manager.users_signal_prefs["app2"][self.trigger2])
+        self.assertIn(self.user_id1, manager.users_signal_prefs["app1"][self.trigger1])
+        self.assertNotIn(
+            self.user_id1, manager.users_signal_prefs["app2"][self.trigger2]
+        )
 
     @patch("commons.utils.cache")
     @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
@@ -59,8 +62,8 @@ class TestUserSignalSettingsCacheManager(TestCase):
 
         manager._add_valid_preferences()
 
-        self.assertIn(1, manager.users_signal_prefs["app1"][self.trigger1])
-        self.assertIn(1, manager.users_signal_prefs["app2"][self.trigger2])
+        self.assertIn(self.user_id1, manager.users_signal_prefs["app1"][self.trigger1])
+        self.assertIn(self.user_id1, manager.users_signal_prefs["app2"][self.trigger2])
 
     @patch("commons.utils.cache")
     @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
@@ -86,7 +89,7 @@ class TestUserSignalSettingsCacheManager(TestCase):
             "app1": {"subscribed": True, "trigger": self.trigger1},
             "app3": {"subscribed": True, "trigger": self.trigger2},
         }
-        mock_signal_setting_2.user_id = 2
+        mock_signal_setting_2.user_id = self.user_id2
 
         mock_select_related.return_value.only.return_value = [
             mock_signal_setting_1,
@@ -100,9 +103,9 @@ class TestUserSignalSettingsCacheManager(TestCase):
         mock_cache.set.assert_called_once_with(
             CacheKeys.USERS_SIGNAL_SETTINGS,
             {
-                "app1": {self.trigger1: {1, 2}},
+                "app1": {self.trigger1: {self.user_id1, self.user_id2}},
                 "app2": {self.trigger2: set()},
-                "app3": {self.trigger2: {2}},
+                "app3": {self.trigger2: {self.user_id2}},
             },
             timeout=60 * 60 * 24,
         )

@@ -5,10 +5,12 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from commons.constants import BettingApp
 from commons.errors import ErrorCodes
 from commons.serializers import UserPhoneNumberField
 from users.constants import TOTP_LENGTH
 from users.models import SignalSetting, User
+from users.utils import default_signal_preference
 from users.validators import (
     OTPValidator,
     PhoneNumberExistsValidator,
@@ -250,3 +252,49 @@ class SignalSettingSerializer(serializers.ModelSerializer):
         model = SignalSetting
         fields = "__all__"
         read_only_fields = ("created_at", "updated_at", "user")
+
+    def _normalize_preferences(self, existing_prefs, incoming_prefs) -> dict:
+        """
+        Method ensures that only one app can have its `subscribed` field set to True.
+        """
+        # Filter incoming preferences to only include valid apps
+        valid_apps = set(BettingApp.list())
+        incoming_prefs = {
+            app: cfg for app, cfg in incoming_prefs.items() if app in valid_apps
+        }
+
+        # Start with existing, then overwrite with whatever the client sent
+        normalized_preferences = {
+            app: existing_prefs.get(app, {})
+            for app in set(existing_prefs) | set(incoming_prefs)
+        }
+        normalized_preferences.update(incoming_prefs)
+
+        # Find which app the client is trying to turn on
+        # (could be multiple; we'll let the last one “win”)
+        newly_on = [app for app, cfg in incoming_prefs.items() if cfg.get("subscribed")]
+
+        if newly_on:
+            # The one they most recently set to True
+            keep = newly_on[-1]
+            for app in normalized_preferences:
+                normalized_preferences[app]["subscribed"] = app == keep
+
+        return normalized_preferences
+
+    def create(self, validated_data):
+        prefs = validated_data.get("preference", {}) or {}
+        # merge against a “blank” existing prefs
+        validated_data["preference"] = self._normalize_preferences(
+            existing_prefs=default_signal_preference(),  # empty stub
+            incoming_prefs=prefs,
+        )
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if "preference" in validated_data:
+            incoming = validated_data["preference"] or {}
+            validated_data["preference"] = self._normalize_preferences(
+                existing_prefs=instance.preference or {}, incoming_prefs=incoming
+            )
+        return super().update(instance, validated_data)

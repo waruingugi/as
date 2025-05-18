@@ -2,7 +2,7 @@ from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 
-from commons.constants import CacheKeys
+from commons.constants import BettingApp, CacheKeys
 from commons.tests.test_base import UserBaseAPITestCase
 from users.constants import MAX_USERNAME_LEN, MIN_USERNAME_LEN
 from users.models import SignalSetting, User
@@ -230,6 +230,9 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
         self.signal_setting = SignalSetting.objects.create(
             user=self.user, preference=default_signal_preference()
         )
+
+        self.APP0, self.APP1 = BettingApp.list()[0], BettingApp.list()[1]
+
         self.url = reverse("users:signal-settings")
         self.detail_url = reverse(
             "users:signal-settings-detail", kwargs={"id": self.signal_setting.id}
@@ -247,6 +250,7 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
         """Assert regular users can only view their own SignalSettings."""
         self.force_authenticate_user()
         response = self.client.get(self.url)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["results"][0]["id"], str(self.signal_setting.id))
 
@@ -282,14 +286,14 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
         self.force_authenticate_user()
 
         preference = default_signal_preference()
-        preference["BETGR8"]["subscribed"] = True
-        preference["BETGR8"]["trigger"] = 90
+        preference[self.APP1]["subscribed"] = True
+        preference[self.APP1]["trigger"] = 90
         data = {"preference": preference}
         response = self.client.post(self.url, data, format="json")
 
         # Assert setting is saved to cache
         cached_data = cache.get(CacheKeys.USERS_SIGNAL_SETTINGS)
-        self.assertIn(str(self.user.id), cached_data["BETGR8"][90])
+        self.assertIn(str(self.user.id), cached_data[self.APP1][90])
 
         # Assert response is correct
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -299,18 +303,74 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
     def test_user_can_update_own_signal_preference(self) -> None:
         """Assert regular users can update their own SignalSetting preference."""
         self.force_authenticate_user()
-        data = {"preference": {"BETGR8": {"subscribed": True, "trigger": 90}}}
+        data = {"preference": {self.APP1: {"subscribed": True, "trigger": 80}}}
         response = self.client.put(self.detail_url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.signal_setting.refresh_from_db()
-        self.assertEqual(self.signal_setting.preference, data["preference"])
+        self.assertTrue(self.signal_setting.preference[self.APP1]["subscribed"])
+
+        # Assert setting is saved to cache
+        cached_data = cache.get(CacheKeys.USERS_SIGNAL_SETTINGS)
+        self.assertIn(str(self.user.id), cached_data[self.APP1][80])
 
     def test_user_cannot_update_others_signal_preference(self) -> None:
         """Assert regular users cannot update the SignalSetting preference of other users."""
         foreign_user = self.create_foreign_user()
         self.client.force_authenticate(user=foreign_user)
-        data = {"preference": {"BETGR8": {"subscribed": True, "trigger": 90}}}
+        data = {"preference": {self.APP1: {"subscribed": True, "trigger": 90}}}
         response = self.client.put(self.detail_url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_user_can_only_have_one_subscription_on_creation(self) -> None:
+        """Assert can only have one app subscription set to True on post"""
+        self.force_authenticate_user()
+        SignalSetting.objects.all().delete()  # Clear previous settings
+        data = {
+            "preference": {
+                self.APP0: {"subscribed": True, "trigger": 90},
+                self.APP1: {"subscribed": True, "trigger": 80},
+            }
+        }
+        response = self.client.post(self.url, data, format="json")
+        signal_setting = SignalSetting.objects.get(user=self.user)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(signal_setting.preference[self.APP0]["subscribed"], False)
+        self.assertEqual(signal_setting.preference[self.APP1]["subscribed"], True)
+
+    def test_user_can_only_have_one_subscription_on_update(self) -> None:
+        """Assert can only have one app subscription set to True on put"""
+        self.force_authenticate_user()
+        data = {
+            "preference": {
+                self.APP0: {"subscribed": True, "trigger": 90},
+                self.APP1: {"subscribed": True, "trigger": 80},
+            }
+        }
+        response = self.client.put(self.detail_url, data, format="json")
+        signal_setting = SignalSetting.objects.get(user=self.user)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(signal_setting.preference[self.APP0]["subscribed"], False)
+        self.assertEqual(signal_setting.preference[self.APP1]["subscribed"], True)
+
+    def test_invalid_apps_are_ignored(self) -> None:
+        """Assert invalid apps are ignored on update"""
+        self.force_authenticate_user()
+        preference = default_signal_preference()
+        preference["invalid_app"] = {"subscribed": True, "trigger": 90}
+
+        data = {
+            "preference": {
+                "invalid_app": {"subscribed": True, "trigger": 80},
+            }
+        }
+
+        response = self.client.put(self.detail_url, data, format="json")
+        signal_setting = SignalSetting.objects.get(user=self.user)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn("invalid_app", signal_setting.preference)
+        self.assertNotIn("invalid_app", cache.get(CacheKeys.USERS_SIGNAL_SETTINGS))

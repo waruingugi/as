@@ -34,48 +34,6 @@ def send_push_task(*, type: str, title: str, message: str, user_id: str) -> bool
     return False
 
 
-# @shared_task
-# def refresh_users_signal_settings():
-#     """
-#     Update users signal settings.
-#     This task ensures that the signal settings for all users are up to date.
-#     It is called periodically.
-#     """
-#     logger.info("Refreshing users signal settings in cache...")
-#
-#     betting_apps = set(BettingApp.list())
-#     users_signal_prefs = defaultdict(lambda: defaultdict(set))
-#     all_signal_settings = SignalSetting.objects.select_related("user").only(
-#         "preference", "user__id"
-#     )
-#
-#     for signal_setting in all_signal_settings:
-#         user_preferences = {
-#             app: data
-#             for app, data in signal_setting.preference.items()
-#             if app in betting_apps  # App is valid
-#             and data.get("subscribed")  # Subscribed is True
-#             and data.get("trigger") in SIGNAL_NOTIFICATION_TRIGGERS  # Is valid trigger
-#         }
-#
-#         # Update preferences only if invalid apps or triggers were removed
-#         if user_preferences != signal_setting.preference:
-#             signal_setting.preference = user_preferences
-#             signal_setting.save(update_fields=["preference"])
-#
-#         # Process valid preferences
-#         for app_name, app_data in user_preferences.items():
-#             users_signal_prefs[app_name][app_data["trigger"]].add(
-#                 signal_setting.user_id
-#             )
-#
-#     # Save the updated/refreshed signal settings to cache
-#     cache.set(
-#         CacheKeys.USERS_SIGNAL_SETTINGS, users_signal_prefs, timeout=60 * 60 * 24
-#     )  # Cache for 24 hours
-#     logger.info("Users signal settings refreshed successfully.")
-
-
 @shared_task
 def refresh_users_signal_settings():
     """

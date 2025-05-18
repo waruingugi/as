@@ -4,6 +4,7 @@ from commons.constants import (
     DEFAULT_CACHE_DURATION,
     MULTIPLIER_PAGE_SIZE,
     SIGNAL_NOTIFICATION_TRIGGERS,
+    BettingApp,
     CacheKeys,
 )
 from commons.logger import logger
@@ -88,6 +89,15 @@ def get_workers_crash_history(
     return data
 
 
+def get_app_subscribers(self, app: str, threshold: int) -> set:
+    """
+    Get the subscribers for a specific app and threshold.
+    """
+    cache_key = cache.get(CacheKeys.USERS_SIGNAL_SETTINGS, {})
+    subscribers = cache_key.get(app, {}).get(threshold, set())
+    return subscribers
+
+
 class SignalNotificationMonitor:
     """
     Monitor for signal notifications.
@@ -101,17 +111,19 @@ class SignalNotificationMonitor:
         self.batch_reset_trigger_flags()
 
     def batch_reset_trigger_flags(self) -> None:
-        for threshold in self.thresholds:
-            self.trigger_signal_flags[threshold] = {
-                "triggered": False,  # Has the signal been triggered?
-                "triggered_at": None,  # Time the signal was triggered
-                "triggered_by": None,  # The payout that triggered the signal
-            }
+        for app in BettingApp.list():
+            for threshold in self.thresholds:
+                self.trigger_signal_flags[app][threshold] = {
+                    "triggered": False,  # Has the signal been triggered?
+                    "triggered_at": None,  # Time the signal was triggered
+                    "triggered_by": None,  # The payout that triggered the signal
+                }
 
     def __call__(self, instances) -> None:
         # Pop most recent instance
         instance = instances[-1]
         payout = int(instance.payout)
+        app = instance.worker.app
 
         if payout <= self.RESET_AT_TRIGGER:
             self.batch_reset_trigger_flags()
@@ -119,7 +131,14 @@ class SignalNotificationMonitor:
 
         elif payout in self.thresholds:
             if not self.trigger_signal_flags[payout]["triggered"]:
-                self.trigger_signal_flags[payout]["triggered"] = True
+                self.trigger_signal_flags[app][payout].update(
+                    {
+                        "triggered": True,
+                        "triggered_at": instance.created_at,
+                        "triggered_by": payout,
+                    }
+                )
                 logger.info(f"Signal notification triggered for payout: {payout}x")
+
         else:
             pass

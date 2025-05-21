@@ -36,7 +36,7 @@ class TestUserSignalSettingsCacheManager(TestCase):
                 "app1": {self.trigger1: {self.user_id1}},
                 "app2": {self.trigger2: set()},
             },
-            timeout=60 * 60 * 24,
+            timeout=None,
         )
 
     @patch("commons.utils.cache")
@@ -107,5 +107,5 @@ class TestUserSignalSettingsCacheManager(TestCase):
                 "app2": {self.trigger2: set()},
                 "app3": {self.trigger2: {self.user_id2}},
             },
-            timeout=60 * 60 * 24,
+            timeout=None,
         )

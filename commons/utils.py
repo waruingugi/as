@@ -26,7 +26,7 @@ class UserSignalSettingsCacheManager:
     Class to handle updating and refreshing the users_signal_prefs cache.
     """
 
-    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
+    CACHE_TIMEOUT = None  # infinity
 
     def __init__(self, instance=None) -> None:
         self.instance = instance

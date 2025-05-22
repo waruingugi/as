@@ -64,6 +64,7 @@ class CacheKeys:
     WORKER_PROBABILITY_SUGGESTION = "worker_id:{}:over{}:suggestion"
 
     USERS_SIGNAL_SETTINGS = "users_signal_settings"
+    TRIGGER_SIGNAL_FLAGS = "trigger_signal_flags"
 
 
 class SeedName(str, Enum):

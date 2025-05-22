@@ -15,3 +15,4 @@ class NotificationType(str, Enum):
     OTP = "OTP"
     MARKETING = "MARKETING"
     DEPOSIT = "DEPOSIT"
+    SIGNAL = "SIGNAL"

@@ -7,6 +7,7 @@ from django.test import TestCase
 from commons.constants import DEFAULT_CACHE_DURATION, BettingApp, CacheKeys, SeedName
 from observers.models import Multiplier
 from observers.utils import (
+    SignalNotificationMonitor,
     get_new_multipliers,
     get_worker_crash_list,
     get_workers_crash_history,
@@ -141,3 +142,96 @@ class TestGetWorkersCrashHistory(TestCase):
     def test_get_workers_crash_history_empty_workers(self) -> None:
         result = get_workers_crash_history(app="NON_EXISTENT_APP", count=1)
         self.assertEqual(result, [])
+
+
+class TestSignalNotificationMonitor(TestCase):
+    def setUp(self) -> None:
+        self.monitor = SignalNotificationMonitor
+        self.mock_instance = type(
+            "MockInstance",
+            (),
+            {
+                "payout": 100,
+                "worker": type(
+                    "MockWorker",
+                    (),
+                    {"app": BettingApp.BETIKA.value, "name": "TestWorker"},
+                )(),
+                "created_at": "2025-01-26T12:00:00Z",
+            },
+        )()
+
+    def test_batch_reset_trigger_flags_initializes_flags(self) -> None:
+        """Assert the trigger signal flags are reset correctly"""
+        trigger_signal_flags = self.monitor.get_trigger_signal_flags()
+        for app in BettingApp.list():  # Set flags to True first
+            for threshold in self.monitor.thresholds:
+                trigger_signal_flags[app][threshold]["triggered"] = True
+        self.monitor.set_trigger_signal_flags(trigger_signal_flags)
+
+        self.monitor.batch_reset_trigger_flags()  # Call the reset method
+        trigger_signal_flags = (
+            self.monitor.get_trigger_signal_flags()
+        )  # Fetch the cached flags
+
+        # Assert all flags are reset to False
+        for app in BettingApp.list():
+            for threshold in self.monitor.thresholds:
+                self.assertFalse(trigger_signal_flags[app][threshold]["triggered"])
+
+        # Assert the cache has been set correctly
+        cache_key = self.monitor.TRIGGER_CACHE_KEY
+        cached_flags = cache.get(cache_key)
+        self.assertEqual(trigger_signal_flags, cached_flags)
+
+    @patch(
+        "observers.utils.get_app_threshold_subscribers", return_value={"user1", "user2"}
+    )
+    @patch("observers.utils.OneSignal")
+    def test_execute_triggers_notification(self, mock_onesignal, mock_get_subs) -> None:
+        """Assert the notification is triggered correctly, say for a 100% probability"""
+        self.monitor.execute([self.mock_instance])  # Trigger the notification
+        trigger_signal_flags = (
+            self.monitor.get_trigger_signal_flags()
+        )  # Get the cached flags
+
+        # Assert the flags are set correctly
+        for threshold in self.monitor.thresholds:
+            if self.mock_instance.payout >= threshold:
+                self.assertTrue(
+                    trigger_signal_flags[self.mock_instance.worker.app][threshold][
+                        "triggered"
+                    ]
+                )
+        mock_onesignal.send_push.assert_called()
+
+    @patch("observers.utils.get_app_threshold_subscribers", return_value=set())
+    @patch("observers.utils.OneSignal")
+    def test_execute_no_subscribers(self, mock_onesignal, mock_get_subs) -> None:
+        """Assert no notification is sent when there are no subscribers"""
+        self.monitor.execute([self.mock_instance])
+        mock_onesignal.send_push.assert_not_called()
+
+    def test_execute_resets_flags_when_payout_below_reset(self) -> None:
+        """Assert the flags are reset when the payout is below the reset threshold"""
+        self.mock_instance.payout = 10  # Set payout below the reset threshold
+        self.monitor.batch_reset_trigger_flags()  # Reset all flags to False
+        trigger_signal_flags = (
+            self.monitor.get_trigger_signal_flags()
+        )  # Get the cached flags
+
+        # Manually set a flag to True to test reset
+        trigger_signal_flags[BettingApp.BETIKA.value][self.monitor.thresholds[0]][
+            "triggered"
+        ] = True
+        self.monitor.set_trigger_signal_flags(trigger_signal_flags)
+
+        # Call the execute method
+        self.monitor.execute([self.mock_instance])
+        trigger_signal_flags = self.monitor.get_trigger_signal_flags()
+
+        # Assert all flags are reset to False
+        for threshold in self.monitor.thresholds:
+            self.assertFalse(
+                trigger_signal_flags[BettingApp.BETIKA.value][threshold]["triggered"]
+            )

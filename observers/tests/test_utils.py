@@ -151,7 +151,7 @@ class TestSignalNotificationMonitor(TestCase):
             "MockInstance",
             (),
             {
-                "payout": 100,
+                "crash": 100,
                 "worker": type(
                     "MockWorker",
                     (),
@@ -163,20 +163,20 @@ class TestSignalNotificationMonitor(TestCase):
 
     def test_batch_reset_trigger_flags_initializes_flags(self) -> None:
         """Assert the trigger signal flags are reset correctly"""
-        trigger_signal_flags = self.monitor.get_trigger_signal_flags()
+        trigger_signal_flags = self.monitor._get_trigger_signal_flags()
         for app in BettingApp.list():  # Set flags to True first
-            for threshold in self.monitor.thresholds:
+            for threshold in self.monitor.THRESHOLDS:
                 trigger_signal_flags[app][threshold]["triggered"] = True
-        self.monitor.set_trigger_signal_flags(trigger_signal_flags)
+        self.monitor._set_trigger_signal_flags(trigger_signal_flags)
 
-        self.monitor.batch_reset_trigger_flags()  # Call the reset method
+        self.monitor._batch_reset_trigger_flags()  # Call the reset method
         trigger_signal_flags = (
-            self.monitor.get_trigger_signal_flags()
+            self.monitor._get_trigger_signal_flags()
         )  # Fetch the cached flags
 
         # Assert all flags are reset to False
         for app in BettingApp.list():
-            for threshold in self.monitor.thresholds:
+            for threshold in self.monitor.THRESHOLDS:
                 self.assertFalse(trigger_signal_flags[app][threshold]["triggered"])
 
         # Assert the cache has been set correctly
@@ -188,16 +188,20 @@ class TestSignalNotificationMonitor(TestCase):
         "observers.utils.get_app_threshold_subscribers", return_value={"user1", "user2"}
     )
     @patch("observers.utils.OneSignal")
-    def test_execute_triggers_notification(self, mock_onesignal, mock_get_subs) -> None:
+    def test_process_latest_payout_triggers_notification(
+        self, mock_onesignal, mock_get_subs
+    ) -> None:
         """Assert the notification is triggered correctly, say for a 100% probability"""
-        self.monitor.execute([self.mock_instance])  # Trigger the notification
+        self.monitor.process_latest_payout(
+            self.mock_instance
+        )  # Trigger the notification
         trigger_signal_flags = (
-            self.monitor.get_trigger_signal_flags()
+            self.monitor._get_trigger_signal_flags()
         )  # Get the cached flags
 
         # Assert the flags are set correctly
-        for threshold in self.monitor.thresholds:
-            if self.mock_instance.payout >= threshold:
+        for threshold in self.monitor.THRESHOLDS:
+            if self.mock_instance.crash >= threshold:
                 self.assertTrue(
                     trigger_signal_flags[self.mock_instance.worker.app][threshold][
                         "triggered"
@@ -207,31 +211,33 @@ class TestSignalNotificationMonitor(TestCase):
 
     @patch("observers.utils.get_app_threshold_subscribers", return_value=set())
     @patch("observers.utils.OneSignal")
-    def test_execute_no_subscribers(self, mock_onesignal, mock_get_subs) -> None:
+    def test_process_latest_payout_when_no_subscribers(
+        self, mock_onesignal, mock_get_subs
+    ) -> None:
         """Assert no notification is sent when there are no subscribers"""
-        self.monitor.execute([self.mock_instance])
+        self.monitor.process_latest_payout(self.mock_instance)
         mock_onesignal.send_push.assert_not_called()
 
-    def test_execute_resets_flags_when_payout_below_reset(self) -> None:
+    def test_process_latest_payout_resets_flags_when_payout_below_reset(self) -> None:
         """Assert the flags are reset when the payout is below the reset threshold"""
-        self.mock_instance.payout = 10  # Set payout below the reset threshold
-        self.monitor.batch_reset_trigger_flags()  # Reset all flags to False
+        self.mock_instance.crash = 10  # Set payout below the reset threshold
+        self.monitor._batch_reset_trigger_flags()  # Reset all flags to False
         trigger_signal_flags = (
-            self.monitor.get_trigger_signal_flags()
+            self.monitor._get_trigger_signal_flags()
         )  # Get the cached flags
 
         # Manually set a flag to True to test reset
-        trigger_signal_flags[BettingApp.BETIKA.value][self.monitor.thresholds[0]][
+        trigger_signal_flags[BettingApp.BETIKA.value][self.monitor.THRESHOLDS[0]][
             "triggered"
         ] = True
-        self.monitor.set_trigger_signal_flags(trigger_signal_flags)
+        self.monitor._set_trigger_signal_flags(trigger_signal_flags)
 
         # Call the execute method
-        self.monitor.execute([self.mock_instance])
-        trigger_signal_flags = self.monitor.get_trigger_signal_flags()
+        self.monitor.process_latest_payout(self.mock_instance)
+        trigger_signal_flags = self.monitor._get_trigger_signal_flags()
 
         # Assert all flags are reset to False
-        for threshold in self.monitor.thresholds:
+        for threshold in self.monitor.THRESHOLDS:
             self.assertFalse(
                 trigger_signal_flags[BettingApp.BETIKA.value][threshold]["triggered"]
             )

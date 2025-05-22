@@ -95,7 +95,7 @@ def get_workers_crash_history(
     return data
 
 
-def get_app_threshold_subscribers(self, app: str, threshold: int) -> set:
+def get_app_threshold_subscribers(app: str, threshold: int) -> set:
     """
     Get the subscribers for a specific app and threshold.
     """
@@ -112,36 +112,34 @@ class SignalNotificationMonitor:
     RESET_AT_TRIGGER = 50
     TRIGGER_SIGNAL_CACHE_TIMEOUT = None  # Cache never expires
     TRIGGER_CACHE_KEY = CacheKeys.TRIGGER_SIGNAL_FLAGS
+    THRESHOLDS = SIGNAL_NOTIFICATION_TRIGGERS
 
-    def __init__(self) -> None:
-        self.thresholds = SIGNAL_NOTIFICATION_TRIGGERS
-
-    def batch_reset_trigger_flags(self) -> None:
+    def _batch_reset_trigger_flags(self) -> None:
         """
         Reset all trigger signal flags for all apps and thresholds.
         """
         trigger_signal_flags = defaultdict(dict)
         for app in BettingApp.list():
-            for threshold in self.thresholds:
+            for threshold in self.THRESHOLDS:
                 trigger_signal_flags[app][threshold] = {
                     "triggered": False,  # Has the signal been triggered?
                     "triggered_at": None,  # Time the signal was triggered
                     "triggered_by": None,  # The payout that triggered the signal
                 }
-        self.set_trigger_signal_flags(trigger_signal_flags)
+        self._set_trigger_signal_flags(trigger_signal_flags)
 
-    def get_trigger_signal_flags(self) -> dict:
+    def _get_trigger_signal_flags(self) -> dict:
         """
         Get the current signal trigger flags from cache.
         If not present, initialize them.
         """
         cached = cache.get(self.TRIGGER_CACHE_KEY, {})
         if not cached:
-            self.batch_reset_trigger_flags()
+            self._batch_reset_trigger_flags()
             cached = cache.get(self.TRIGGER_CACHE_KEY, {})
         return cached
 
-    def set_trigger_signal_flags(self, trigger_signal_flags: dict) -> None:
+    def _set_trigger_signal_flags(self, trigger_signal_flags: dict) -> None:
         """
         Set the current signal trigger flags in cache.
         """
@@ -151,28 +149,30 @@ class SignalNotificationMonitor:
             self.TRIGGER_SIGNAL_CACHE_TIMEOUT,
         )
 
-    def execute(self, instances) -> None:
+    def process_latest_payout(self, instance: Multiplier) -> None:
         """
         Notify users when a signal is triggered.
-        If payout is below or equal to RESET_AT_TRIGGER, reset all flags.
+        If the payout is below or equal to RESET_AT_TRIGGER, reset all flags.
         Otherwise, check thresholds and send notifications as needed.
         """
-        instance = instances[-1]
-        payout = int(instance.payout)
+        payout = int(instance.crash)
         app = instance.worker.app
 
         # Reset all flags if the payout is below or equal to the reset threshold
         if payout <= self.RESET_AT_TRIGGER:
-            self.batch_reset_trigger_flags()
+            self._batch_reset_trigger_flags()
             return
 
-        trigger_signal_flags = self.get_trigger_signal_flags()
+        trigger_signal_flags = self._get_trigger_signal_flags()
 
-        for threshold in self.thresholds:
+        for threshold in self.THRESHOLDS:
             has_been_triggered_before = trigger_signal_flags[app][threshold][
                 "triggered"
             ]
             if payout >= threshold and not has_been_triggered_before:
+                logger.info(
+                    f"{app} {instance.worker.name} has triggered signal for {threshold}% chance."
+                )
                 # Update the trigger flag for this threshold
                 trigger_signal_flags[app][threshold].update(
                     {
@@ -200,10 +200,12 @@ class SignalNotificationMonitor:
                         user_ids=list(subscribers),
                     )
                 else:
-                    logger.info(f"No subscribers for {app} at {threshold}%")
+                    logger.info(
+                        f"No subscribers for {instance.worker.name} {app} at {threshold}%"
+                    )
 
         # Save updated trigger flags to cache
-        self.set_trigger_signal_flags(trigger_signal_flags)
+        self._set_trigger_signal_flags(trigger_signal_flags)
 
 
 # Singleton instance

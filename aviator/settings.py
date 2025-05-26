@@ -261,7 +261,7 @@ if DEBUG:
     try:
         from aviator.local_settings import *  # noqa
     except Exception as e:  # noqa
-        pass
+        raise ImportError("Could not import aviator.local_settings")
 else:
     # Parse database configuration from $DATABASE_URL
     import dj_database_url  # noqa

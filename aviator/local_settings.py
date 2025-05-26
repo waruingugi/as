@@ -107,10 +107,10 @@ WSGI_APPLICATION = "aviator.local_wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ["DATABASE_NAME"],
-        "USER": os.environ["DATABASE_USER"],
-        "HOST": os.environ["DATABASE_HOST"],
-        "PASSWORD": os.environ["DATABASE_PASSWORD"],
+        "NAME": os.environ["POSTGRES_DB"],
+        "USER": os.environ["POSTGRES_USER"],
+        "HOST": os.environ["POSTGRES_HOST"],
+        "PASSWORD": os.environ["POSTGRES_PASSWORD"],
         "CONN_MAX_AGE": 300,  # 5 minutes
     }
 }
@@ -161,17 +161,20 @@ AUTH_USER_MODEL = "users.User"
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": os.environ["REDIS_URL"],
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
     }
 }
 
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=5),
     "AUTH_HEADER_TYPES": ("Bearer",),
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken"),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "BLACKLIST_AFTER_ROTATION": True,
     "ROTATE_REFRESH_TOKENS": True,
 }
@@ -209,6 +212,9 @@ KUBERNETES_TOKEN = os.environ["KUBERNETES_TOKEN"]
 # One Signal
 ONESIGNAL_APP_ID = os.environ["ONESIGNAL_APP_ID"]
 ONESIGNAL_API_KEY = os.environ["ONESIGNAL_API_KEY"]
+
+# CURRENT APP VERSION (MAJOR.MINOR.PATCH)
+APP_VERSION = os.environ["APP_VERSION"]
 
 # DRF Spectacular Settings for Swagger
 SPECTACULAR_SETTINGS = {

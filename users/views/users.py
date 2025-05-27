@@ -1,3 +1,4 @@
+from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAPIView
@@ -78,3 +79,28 @@ class SignalSettingViewSet(ModelViewSet):
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        """Override the update to handle create if instance being updated does not exist."""
+        try:
+            # 1) Try to fetch the existing object once (very efficient)
+            instance = self.get_object()
+            is_create = False
+        except Http404:
+            instance = None
+            is_create = True
+
+        # 2) Bind serializer: pass instance if updating, or None to create
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=kwargs.get("partial", False),
+        )
+        serializer.is_valid(raise_exception=True)
+
+        # 3) serializer.save(...) will call create() or update() in your serializer
+        serializer.save(user=request.user)
+
+        # 4) Pick status code based on whether we created it
+        code = status.HTTP_201_CREATED if is_create else status.HTTP_200_OK
+        return Response(serializer.data, status=code)

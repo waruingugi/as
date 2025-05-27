@@ -317,11 +317,13 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
     def test_user_cannot_update_others_signal_preference(self) -> None:
         """Assert regular users cannot update the SignalSetting preference of other users."""
         foreign_user = self.create_foreign_user()
+        SignalSetting.objects.filter(user=self.user).delete()
+
         self.client.force_authenticate(user=foreign_user)
         data = {"preference": {self.APP1: {"subscribed": True, "trigger": 90}}}
-        response = self.client.put(self.detail_url, data, format="json")
+        self.client.put(self.detail_url, data, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertFalse(SignalSetting.objects.filter(user=self.user).exists())
 
     def test_user_can_only_have_one_subscription_on_creation(self) -> None:
         """Assert can only have one app subscription set to True on post"""
@@ -374,3 +376,18 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn("invalid_app", signal_setting.preference)
         self.assertNotIn("invalid_app", cache.get(CacheKeys.USERS_SIGNAL_SETTINGS))
+
+    def test_user_update_signal_setting_when_not_exist(self) -> None:
+        """Assert updating signal setting when it does not exist returns 404."""
+        SignalSetting.objects.filter(user=self.user).delete()
+        self.force_authenticate_user()
+
+        data = {"preference": {self.APP1: {"subscribed": True, "trigger": 80}}}
+        response = self.client.put(self.detail_url, data, format="json")
+
+        signal_setting = SignalSetting.objects.get(user=self.user)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(signal_setting.preference[self.APP0]["subscribed"], False)
+        self.assertEqual(signal_setting.preference[self.APP1]["subscribed"], True)
+        self.assertEqual(signal_setting.preference[self.APP1]["trigger"], 80)

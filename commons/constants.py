@@ -105,9 +105,10 @@ class Message(str, Enum):
 
 class PushNotification:
     class WELCOME_MESSAGE:
-        title = "Welcome to Aviator Signals"
+        title = "You now have access to Rubani!"
         message = (
-            "Welcome to Aviator Signals! Got questions? - whatsapp admin on 0704845040."
+            "Welcome to Rubani - the #1 aviator signals app in Kenya. "
+            "Remember to activate your signals in the Settings page!"
         )
 
 

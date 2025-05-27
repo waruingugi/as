@@ -335,7 +335,7 @@ class SignalNotificationMonitor:
     ) -> None:
         """Build and dispatch a push notification for a threshold crossing."""
         title = f"{app} Signal Alert"
-        message = f"{seed} has reached your {threshold}% trigger. Tap to take action."
+        message = f"{seed} has reached {threshold}% chance. Tap to take action."
         logger.info(f"Notifying {app} {seed} subscribers for {threshold}% trigger")
 
         subscribers = get_app_threshold_subscribers(app, threshold)
@@ -354,3 +354,31 @@ class SignalNotificationMonitor:
             logger.error(
                 f"Failed to enqueue push for {app}:{seed}:{threshold} trigger -> {e}"
             )
+
+    # @classmethod
+    # def _has_triggered(
+    #     cls, app: str, seed: str, threshold: int
+    # ) -> bool:
+    #     """
+    #     Check whether the given (app, seed, threshold) has already fired.
+    #     """
+    #     key = cls._flag_key(app, seed, threshold)
+    #     return cache.get(key) is not None
+    #
+    # @classmethod
+    # def get_trigger_info(
+    #     cls, app: str, seed: str, threshold: int
+    # ) -> dict | None:
+    #     """
+    #     Retrieve the payload for when a trigger first fired, or None if never fired.
+    #
+    #     Returns a dict with 'triggered_at' (ISO str) and 'triggered_by' (payout).
+    #     """
+    #     key = cls._flag_key(app, seed, threshold)
+    #     raw = cache.get(key)
+    #     if not raw:
+    #         return None
+    #     try:
+    #         return json.loads(raw)
+    #     except json.JSONDecodeError:
+    #         return None

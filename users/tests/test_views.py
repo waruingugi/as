@@ -391,3 +391,28 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
         self.assertEqual(signal_setting.preference[self.APP0]["subscribed"], False)
         self.assertEqual(signal_setting.preference[self.APP1]["subscribed"], True)
         self.assertEqual(signal_setting.preference[self.APP1]["trigger"], 80)
+
+    def test_user_can_update_trigger_with_int_str(self) -> None:
+        """Assert trigger can be updated when passed as a stringified int."""
+        self.force_authenticate_user()
+        data = {"preference": {self.APP1: {"subscribed": True, "trigger": "80"}}}
+        response = self.client.put(self.detail_url, data, format="json")
+        self.signal_setting.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(self.signal_setting.preference[self.APP1]["subscribed"])
+        self.assertEqual(self.signal_setting.preference[self.APP1]["trigger"], 80)
+
+    def test_user_cannot_set_invalid_trigger(self) -> None:
+        """Assert error is raised when an invalid trigger value is passed."""
+        self.force_authenticate_user()
+        # Example: trigger is negative or not an integer
+        invalid_triggers = [-10, "not_an_int", 101.5, None]
+        for invalid_trigger in invalid_triggers:
+            data = {
+                "preference": {
+                    self.APP1: {"subscribed": True, "trigger": invalid_trigger}
+                }
+            }
+            response = self.client.put(self.detail_url, data, format="json")
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn("trigger", str(response.data))

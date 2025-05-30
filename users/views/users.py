@@ -1,9 +1,7 @@
-from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
 
 from commons.pagination import StandardPageNumberPagination
 from commons.permissions import IsStaffOrSelfPermission, IsStaffPermission
@@ -15,6 +13,7 @@ from users.serializers import (
     UserListSerializer,
     UserRetrieveUpdateSerializer,
 )
+from users.utils import default_signal_preference
 
 
 class UserCreateView(CreateAPIView):
@@ -55,9 +54,66 @@ class UserRetrieveUpdateView(RetrieveUpdateAPIView):
         return UserRetrieveUpdateSerializer
 
 
-class SignalSettingViewSet(ModelViewSet):
+# class SignalSettingViewSet(ModelViewSet):
+#     """
+#     ViewSet for SignalSetting model.
+#     """
+#
+#     queryset = SignalSetting.objects.all()
+#     serializer_class = SignalSettingSerializer
+#     permission_classes = [IsStaffOrSelfPermission]
+#     lookup_field = "id"
+#
+#     def get_queryset(self):
+#         # Staff can view all SignalSettings
+#         if self.request.user.is_staff:
+#             return self.queryset
+#         # Regular users can only view their own SignalSetting
+#         return self.queryset.filter(user=self.request.user)
+#
+#     def create(self, request, *args, **kwargs):
+#         """Override the create to associate the SignalSetting with the requesting user."""
+#         serializer = self.get_serializer(data=request.data)
+#         if serializer.is_valid(raise_exception=True):
+#             serializer.save(user=request.user)
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#
+#     def update(self, request, *args, **kwargs):
+#         """Override the update to handle create if instance being updated does not exist."""
+#         # 1) get_or_create the instance in one call
+#         instance, created = SignalSetting.objects.get_or_create(
+#             user=request.user,
+#             defaults={'preference': default_signal_preference()}  # we’ll apply preference via serializer
+#         )
+#
+#         # 2) bind the serializer to that instance (or newly made one)
+#         serializer = self.get_serializer(
+#             instance,
+#             data=request.data,
+#             partial=kwargs.get("partial", False)
+#         )
+#         serializer.is_valid(raise_exception=True)
+#
+#         # 3) save through the serializer (runs your normalize logic)
+#         serializer.save(user=request.user)
+#
+#         # 4) pick the right status code
+#         code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+#         return Response(serializer.data, status=code)
+
+
+class SignalSettingViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
     """
-    ViewSet for SignalSetting model.
+    GET   /signal-settings/         → list all (staff) or current user’s own
+    POST  /signal-settings/         → create-or-update for request.user
+    GET   /signal-settings/{id}/    → retrieve a single record (staff only or owner)
+    PUT   /signal-settings/{id}/    → update via standard update
     """
 
     queryset = SignalSetting.objects.all()
@@ -66,41 +122,36 @@ class SignalSettingViewSet(ModelViewSet):
     lookup_field = "id"
 
     def get_queryset(self):
-        # Staff can view all SignalSettings
+        # staff see everyone, normal users only their own
         if self.request.user.is_staff:
             return self.queryset
-        # Regular users can only view their own SignalSetting
         return self.queryset.filter(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
-        """Override the create to associate the SignalSetting with the requesting user."""
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        """
+        If a SignalSetting for this user exists, update it;
+        otherwise create it.  Returns 200 OK if update, 201 Created if new.
+        """
+        # 1) get or make one for this user
+        instance, created = SignalSetting.objects.get_or_create(
+            user=request.user,
+            defaults={
+                "preference": default_signal_preference()
+            },  # or your default_signal_preference()
+        )
 
-    def update(self, request, *args, **kwargs):
-        """Override the update to handle create if instance being updated does not exist."""
-        try:
-            # 1) Try to fetch the existing object once (very efficient)
-            instance = self.get_object()
-            is_create = False
-        except Http404:
-            instance = None
-            is_create = True
-
-        # 2) Bind serializer: pass instance if updating, or None to create
+        # 2) bind serializer (partial=True so missing fields aren’t required)
         serializer = self.get_serializer(
             instance,
             data=request.data,
-            partial=kwargs.get("partial", False),
+            partial=True,
         )
+        # 3) validate the data
         serializer.is_valid(raise_exception=True)
 
-        # 3) serializer.save(...) will call create() or update() in your serializer
+        # 3) run your serializer’s create/update hooks
         serializer.save(user=request.user)
 
-        # 4) Pick status code based on whether we created it
-        code = status.HTTP_201_CREATED if is_create else status.HTTP_200_OK
+        # 4) return 201 if it was new, otherwise 200
+        code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(serializer.data, status=code)

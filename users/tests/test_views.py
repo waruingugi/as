@@ -304,7 +304,7 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
         """Assert regular users can update their own SignalSetting preference."""
         self.force_authenticate_user()
         data = {"preference": {self.APP1: {"subscribed": True, "trigger": 80}}}
-        response = self.client.put(self.detail_url, data, format="json")
+        response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.signal_setting.refresh_from_db()
@@ -351,7 +351,7 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
                 self.APP1: {"subscribed": True, "trigger": 80},
             }
         }
-        response = self.client.put(self.detail_url, data, format="json")
+        response = self.client.post(self.url, data, format="json")
         signal_setting = SignalSetting.objects.get(user=self.user)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -370,20 +370,20 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
             }
         }
 
-        response = self.client.put(self.detail_url, data, format="json")
+        response = self.client.post(self.url, data, format="json")
         signal_setting = SignalSetting.objects.get(user=self.user)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn("invalid_app", signal_setting.preference)
         self.assertNotIn("invalid_app", cache.get(CacheKeys.USERS_SIGNAL_SETTINGS))
 
-    def test_user_update_signal_setting_when_not_exist(self) -> None:
+    def test_user_can_update_signal_setting_when_non_existent(self) -> None:
         """Assert updating signal setting when it does not exist returns 404."""
         SignalSetting.objects.filter(user=self.user).delete()
         self.force_authenticate_user()
 
         data = {"preference": {self.APP1: {"subscribed": True, "trigger": 80}}}
-        response = self.client.put(self.detail_url, data, format="json")
+        response = self.client.post(self.url, data, format="json")
 
         signal_setting = SignalSetting.objects.get(user=self.user)
 
@@ -395,12 +395,11 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
     def test_user_can_update_trigger_with_int_str(self) -> None:
         """Assert trigger can be updated when passed as a stringified int."""
         self.force_authenticate_user()
-        data = {"preference": {self.APP1: {"subscribed": True, "trigger": "80"}}}
-        response = self.client.put(self.detail_url, data, format="json")
+        data = {"preference": {self.APP1: {"subscribed": True, "trigger": "85"}}}
+        self.client.post(self.url, data, format="json")
         self.signal_setting.refresh_from_db()
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(self.signal_setting.preference[self.APP1]["subscribed"])
-        self.assertEqual(self.signal_setting.preference[self.APP1]["trigger"], 80)
+        self.assertEqual(self.signal_setting.preference[self.APP1]["trigger"], 85)
 
     def test_user_cannot_set_invalid_trigger(self) -> None:
         """Assert error is raised when an invalid trigger value is passed."""
@@ -413,6 +412,22 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
                     self.APP1: {"subscribed": True, "trigger": invalid_trigger}
                 }
             }
-            response = self.client.put(self.detail_url, data, format="json")
+            response = self.client.post(self.url, data, format="json")
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertIn("trigger", str(response.data))
+
+    def test_update_nonexistent_signal_setting_twice(self) -> None:
+        """Assert updating a non-existent signal setting creates it, and updating again works as update."""
+        SignalSetting.objects.filter(user=self.user).delete()
+        self.force_authenticate_user()
+        data = {"preference": {self.APP1: {"subscribed": True, "trigger": 80}}}
+
+        # First update: should create the setting (201)
+        response1 = self.client.post(self.url, data, format="json")
+        self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response1.data["preference"][self.APP1]["trigger"], 80)
+
+        # Second update: should update the setting (200)
+        response2 = self.client.post(self.url, data, format="json")
+        self.assertEqual(response2.status_code, status.HTTP_200_OK)
+        self.assertEqual(response2.data["preference"][self.APP1]["trigger"], 80)

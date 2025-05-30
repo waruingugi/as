@@ -18,7 +18,7 @@ urlpatterns = [
     ),
     path(
         "signal-settings/<str:id>/",
-        SignalSettingViewSet.as_view({"get": "retrieve", "put": "update"}),
+        SignalSettingViewSet.as_view({"get": "retrieve"}),
         name="signal-settings-detail",
     ),
     # User Management

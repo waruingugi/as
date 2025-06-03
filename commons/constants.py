@@ -100,7 +100,7 @@ class SMSProvider(Enum):
 
 
 class Message(str, Enum):
-    OTP_SMS = "Your Aviator Signals verification code is {}."
+    OTP_SMS = "Your Rubani verification code is {}."
 
 
 class PushNotification:

@@ -2,6 +2,7 @@ import json
 
 from django.core.cache import cache
 
+from analytics.constants import CrashesToMonitor
 from analytics.services import Probability
 from commons.constants import (
     DEFAULT_CACHE_DURATION,
@@ -262,12 +263,14 @@ class SignalNotificationMonitor:
 
     @classmethod
     def process_latest_payout(cls, instance: Multiplier) -> None:
+        logger.info("Processing latest payout for signal notification monitor.")
         app = instance.worker.app
         seed = instance.worker.name
-        payout = int(instance.crash)
+        # payout = int(instance.crash)
         probability = Probability.calculate_probability(
-            worker_id=str(instance.worker.id), crash=payout
+            worker_id=str(instance.worker.id), crash=CrashesToMonitor.OVER_20X.value
         )
+        logger.info(f"Probability for {app} {seed} is {probability:.2f}%")
 
         # Acquire lock only for flag operations (fast cache ops)
         lock = cache.lock(cls.LOCK_KEY, timeout=cls.LOCK_TIMEOUT)
@@ -278,12 +281,19 @@ class SignalNotificationMonitor:
             else:
                 for threshold in cls.THRESHOLDS:
                     if probability >= threshold:
-                        if cls._mark_first_trigger(app, seed, threshold, instance):
+                        logger.info(
+                            f"{app} {seed} has triggered signal for {threshold}% chance. "
+                            f"Checking if first trigger...."
+                        )
+                        if cls._mark_first_trigger(threshold, instance):
+                            logger.info(
+                                f"First trigger for {app} {seed} at {threshold}% chance."
+                            )
                             triggered.append((app, seed, threshold, instance))
 
         # Outside lock: send notifications for newly triggered thresholds
         for app, seed, threshold, inst in triggered:
-            cls._send_notification(app, seed, threshold, inst)
+            cls._send_notification(app, seed, threshold)
 
     @classmethod
     def _should_reset(cls, probability: float) -> bool:
@@ -296,13 +306,14 @@ class SignalNotificationMonitor:
         return f"{cls.BASE_KEY}:{app}:{seed}:{threshold}"
 
     @classmethod
-    def _mark_first_trigger(
-        cls, app: str, seed: str, threshold: int, instance: Multiplier
-    ) -> bool:
+    def _mark_first_trigger(cls, threshold: int, instance: Multiplier) -> bool:
         """
         Atomically record the first crossing using cache.set(nx=True).
         Returns True only if this is the first time the key was set.
         """
+        app = instance.worker.app
+        seed = instance.worker.name
+
         key = cls._flag_key(app, seed, threshold)
         payload = json.dumps(
             {
@@ -330,9 +341,7 @@ class SignalNotificationMonitor:
                     cls._reset_seed_flags(app, seed)
 
     @classmethod
-    def _send_notification(
-        cls, app: str, seed: str, threshold: int, instance: Multiplier
-    ) -> None:
+    def _send_notification(cls, app: str, seed: str, threshold: int) -> None:
         """Build and dispatch a push notification for a threshold crossing."""
         title = f"{app} Signal Alert"
         message = f"{seed} has reached {threshold}% chance. Tap to take action."
@@ -343,6 +352,9 @@ class SignalNotificationMonitor:
             logger.info(f"No subscribers for {seed} {app} at {threshold}%")
             return
         try:
+            logger.info(
+                f"Found {len(subscribers)} subscribers for {app}:{seed}:{threshold} trigger"
+            )
             # schedule background task
             send_push_task.delay(
                 type=NotificationChannel.PUSH.value,

@@ -264,7 +264,6 @@ class TestSignalNotificationMonitor(TestCase):
                 app=self.mock_instance.worker.app,
                 seed=self.mock_instance.worker.name,
                 threshold=50,
-                instance=self.mock_instance,
             )
             mock_send_push.delay.assert_called_once()
             args, kwargs = mock_send_push.delay.call_args

@@ -344,7 +344,7 @@ class SignalNotificationMonitor:
     def _send_notification(cls, app: str, seed: str, threshold: int) -> None:
         """Build and dispatch a push notification for a threshold crossing."""
         title = f"{app} Signal Alert"
-        message = f"{seed} has reached {threshold}% chance. Tap to take action."
+        message = f"Seed {int(seed.split()[-1]) + 1:02d} has reached {threshold}% chance. Tap to take action."
         logger.info(f"Notifying {app} {seed} subscribers for {threshold}% trigger")
 
         subscribers = get_app_threshold_subscribers(app, threshold)
@@ -353,11 +353,11 @@ class SignalNotificationMonitor:
             return
         try:
             logger.info(
-                f"Found {len(subscribers)} subscribers for {app}:{seed}:{threshold} trigger"
+                f"Found {len(subscribers)} subscribers for {app}:{seed}:{threshold}% trigger"
             )
             # schedule background task
             send_push_task.delay(
-                type=NotificationChannel.PUSH.value,
+                notification_type=NotificationChannel.PUSH.value,
                 title=title,
                 message=message,
                 user_ids=list(subscribers),

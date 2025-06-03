@@ -53,6 +53,7 @@ class UserSignalSettingsCacheManager:
         """
         Update the users_signal_prefs cache for a single instance.
         """
+        self._remove_previous_preferences()
         self._remove_invalid_preferences()
         self._add_valid_preferences()
         self._save_cache()
@@ -87,6 +88,14 @@ class UserSignalSettingsCacheManager:
                 self.users_signal_prefs.get(app, {}).get(trigger, set()).discard(
                     str(self.instance.user_id)
                 )
+
+    def _remove_previous_preferences(self) -> None:
+        """
+        Remove user from all triggers for all apps in the cache where the user has subscribed to.
+        """
+        for app, triggers in self.users_signal_prefs.items():
+            for trigger_set in triggers.values():
+                trigger_set.discard(str(self.instance.user_id))
 
     def _add_valid_preferences(self) -> None:
         """

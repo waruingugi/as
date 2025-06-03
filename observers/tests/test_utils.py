@@ -158,7 +158,7 @@ class TestSignalNotificationMonitor(TestCase):
                     (),
                     {
                         "app": BettingApp.BETIKA.value,
-                        "name": "TestWorker",
+                        "name": "Seed 00",
                         "id": uuid4(),
                     },
                 )(),

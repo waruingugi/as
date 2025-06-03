@@ -23,11 +23,11 @@ class OneSignalPush:
         self.session.headers.update(self.HEADERS)
 
     def send_push(
-        self, *, type: str, title: str, message: str, user_ids: list[str]
+        self, *, notification_type: str, title: str, message: str, user_ids: list[str]
     ) -> bool:
         """
         Send a push notification to one or more users
-        :param type: The type of notification
+        :param notification_type: The type of notification
         :param title: The title of the notification
         :param message: The message to be sent
         :param user_ids: The user ID(s) to send the notification to
@@ -57,7 +57,7 @@ class OneSignalPush:
         # Create notifications in bulk
         notifications = [
             Notification(
-                type=type,
+                type=notification_type,
                 message=message,
                 channel=NotificationChannel.PUSH.value,
                 receiving_party=user["phone_number"],

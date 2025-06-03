@@ -56,6 +56,30 @@ class TestUserSignalSettingsCacheManager(TestCase):
 
     @patch("commons.utils.cache")
     @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
+    def test_remove_invalid_preferences_with_different_triggers(
+        self, mock_betting_app_list, mock_cache
+    ):
+        """
+        Test that submitting a new trigger for the same app removes the user from the old trigger set.
+        """
+        # Initial cache: user subscribed to trigger 80 for app1
+        trigger_80 = 80
+        trigger_90 = 90
+        self.mock_cache_data = {
+            "app1": {trigger_80: {self.user_id1}},
+        }
+        self.mock_instance.preference = {
+            "app1": {"subscribed": True, "trigger": trigger_90},
+        }
+        manager = UserSignalSettingsCacheManager(self.mock_instance)
+        manager._remove_invalid_preferences()
+        # User should not be in trigger_80 set anymore
+        self.assertNotIn(
+            self.user_id1, manager.users_signal_prefs["app1"].get(trigger_80, set())
+        )
+
+    @patch("commons.utils.cache")
+    @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
     def test_add_valid_preferences(self, mock_betting_app_list, mock_cache) -> None:
         mock_cache.get.return_value = self.mock_cache_data
         manager = UserSignalSettingsCacheManager(self.mock_instance)

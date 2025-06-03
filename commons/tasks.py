@@ -23,10 +23,17 @@ def send_sms_task(
 
 
 @shared_task  # type: ignore
-def send_push_task(*, type: str, title: str, message: str, user_id: str) -> bool:
+def send_push_task(
+    *, notification_type: str, title: str, message: str, user_ids: list[str]
+) -> bool:
     logger.info("Sending push notification in background...")
     for provider in PUSH_PROVIDERS:
-        if provider.send_push(type=type, title=title, message=message, user_id=user_id):
+        if provider.send_push(
+            notification_type=notification_type,
+            title=title,
+            message=message,
+            user_ids=user_ids,
+        ):
             return True
 
     # Raise error if all providers failed here

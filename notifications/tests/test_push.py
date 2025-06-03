@@ -22,7 +22,7 @@ class OneSignalPushTest(UserBaseAPITestCase):
         mock_post_request.return_value = mock_response
 
         result = self.push_service.send_push(
-            type=NotificationType.MARKETING.value,
+            notification_type=NotificationType.MARKETING.value,
             title=PushNotification.WELCOME_MESSAGE.title,
             message=PushNotification.WELCOME_MESSAGE.message,
             user_ids=[str(self.user.id)],
@@ -43,7 +43,7 @@ class OneSignalPushTest(UserBaseAPITestCase):
         mock_post_request.return_value = mock_response
 
         result = self.push_service.send_push(
-            type=NotificationType.MARKETING.value,
+            notification_type=NotificationType.MARKETING.value,
             title=PushNotification.WELCOME_MESSAGE.title,
             message=PushNotification.WELCOME_MESSAGE.message,
             user_ids=[str(self.user.id)],
@@ -60,7 +60,7 @@ class OneSignalPushTest(UserBaseAPITestCase):
     def test_send_push_no_users(self, mock_post_request) -> None:
         # Use a user ID that does not exist
         result = self.push_service.send_push(
-            type=NotificationType.MARKETING.value,
+            notification_type=NotificationType.MARKETING.value,
             title=PushNotification.WELCOME_MESSAGE.title,
             message=PushNotification.WELCOME_MESSAGE.message,
             user_ids=[str(uuid.uuid4())],
@@ -72,7 +72,7 @@ class OneSignalPushTest(UserBaseAPITestCase):
     def test_send_push_exception(self, mock_post_request) -> None:
         mock_post_request.side_effect = Exception("Network error")
         result = self.push_service.send_push(
-            type=NotificationType.MARKETING.value,
+            notification_type=NotificationType.MARKETING.value,
             title=PushNotification.WELCOME_MESSAGE.title,
             message=PushNotification.WELCOME_MESSAGE.message,
             user_ids=[str(self.user.id)],

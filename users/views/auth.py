@@ -55,10 +55,10 @@ class RegisterView(CreateAPIView):
 
         # Send Push Notification Welcome Message
         send_push_task.delay(
-            type=NotificationType.MARKETING.value,
+            notification_type=NotificationType.MARKETING.value,
             title=PushNotification.WELCOME_MESSAGE.title,
             message=PushNotification.WELCOME_MESSAGE.message,
-            user_id=user.id,
+            user_ids=[user.id],
         )
 
         # Create default signal settings for the user

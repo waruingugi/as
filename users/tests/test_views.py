@@ -431,3 +431,54 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
         response2 = self.client.post(self.url, data, format="json")
         self.assertEqual(response2.status_code, status.HTTP_200_OK)
         self.assertEqual(response2.data["preference"][self.APP1]["trigger"], 80)
+
+
+class AppSubscribersViewTests(UserBaseAPITestCase):
+    def setUp(self) -> None:
+        self.staff_user = self.create_staff_user()
+        self.user1 = User.objects.create_user(
+            phone_number="+254700000001", password="password1", username="subscriber1"
+        )
+        self.user2 = User.objects.create_user(
+            phone_number="+254700000002", password="password2", username="subscriber2"
+        )
+        self.signal_setting1 = SignalSetting.objects.create(
+            user=self.user1, preference=default_signal_preference()
+        )
+        self.signal_setting2 = SignalSetting.objects.create(
+            user=self.user2, preference=default_signal_preference()
+        )
+        self.app = BettingApp.list()[0]
+        self.url = reverse("users:app-subscribers", kwargs={"app": self.app})
+
+    def test_staff_can_view_app_subscribers(self) -> None:
+        """Assert staff can view all subscribers for a given app."""
+        self.force_authenticate_staff_user()
+
+        # Set both users as subscribed to the app
+        self.signal_setting1.preference[self.app]["subscribed"] = True
+        self.signal_setting1.preference[self.app]["trigger"] = 90
+        self.signal_setting1.save()
+
+        self.signal_setting2.preference[self.app]["subscribed"] = True
+        self.signal_setting2.preference[self.app]["trigger"] = 80
+        self.signal_setting2.save()
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertIn(str(self.user1.id), response.data["thresholds"][90])
+        self.assertIn(str(self.user2.id), response.data["thresholds"][80])
+
+    def test_non_staff_cannot_view_app_subscribers(self) -> None:
+        """Assert non-staff users cannot view app subscribers."""
+        self.force_authenticate_user()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_invalid_app_returns_400(self) -> None:
+        """Assert invalid app returns 400 error."""
+        self.force_authenticate_staff_user()
+        invalid_url = reverse("users:app-subscribers", kwargs={"app": "invalid_app"})
+        response = self.client.get(invalid_url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

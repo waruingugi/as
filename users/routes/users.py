@@ -1,6 +1,7 @@
 from django.urls import path
 
 from users.views.users import (
+    AppSubscribersView,
     SignalSettingViewSet,
     UserCreateView,
     UserListView,
@@ -20,6 +21,12 @@ urlpatterns = [
         "signal-settings/<str:id>/",
         SignalSettingViewSet.as_view({"get": "retrieve"}),
         name="signal-settings-detail",
+    ),
+    # App Subscribers
+    path(
+        "app-subscribers/<str:app>/",
+        AppSubscribersView.as_view(),
+        name="app-subscribers",
     ),
     # User Management
     path("create/", UserCreateView.as_view(), name="create"),

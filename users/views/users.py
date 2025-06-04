@@ -2,11 +2,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from commons.pagination import StandardPageNumberPagination
 from commons.permissions import IsStaffOrSelfPermission, IsStaffPermission
+from observers.utils import SIGNAL_NOTIFICATION_TRIGGERS, get_app_threshold_subscribers
 from users.models import SignalSetting, User
 from users.serializers import (
+    AppParamSerializer,
     SignalSettingSerializer,
     StaffUserCreateSerializer,
     StaffUserRetrieveUpdateSerializer,
@@ -52,56 +55,6 @@ class UserRetrieveUpdateView(RetrieveUpdateAPIView):
         if self.request.user.is_staff:
             return StaffUserRetrieveUpdateSerializer
         return UserRetrieveUpdateSerializer
-
-
-# class SignalSettingViewSet(ModelViewSet):
-#     """
-#     ViewSet for SignalSetting model.
-#     """
-#
-#     queryset = SignalSetting.objects.all()
-#     serializer_class = SignalSettingSerializer
-#     permission_classes = [IsStaffOrSelfPermission]
-#     lookup_field = "id"
-#
-#     def get_queryset(self):
-#         # Staff can view all SignalSettings
-#         if self.request.user.is_staff:
-#             return self.queryset
-#         # Regular users can only view their own SignalSetting
-#         return self.queryset.filter(user=self.request.user)
-#
-#     def create(self, request, *args, **kwargs):
-#         """Override the create to associate the SignalSetting with the requesting user."""
-#         serializer = self.get_serializer(data=request.data)
-#         if serializer.is_valid(raise_exception=True):
-#             serializer.save(user=request.user)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#
-#
-#     def update(self, request, *args, **kwargs):
-#         """Override the update to handle create if instance being updated does not exist."""
-#         # 1) get_or_create the instance in one call
-#         instance, created = SignalSetting.objects.get_or_create(
-#             user=request.user,
-#             defaults={'preference': default_signal_preference()}  # we’ll apply preference via serializer
-#         )
-#
-#         # 2) bind the serializer to that instance (or newly made one)
-#         serializer = self.get_serializer(
-#             instance,
-#             data=request.data,
-#             partial=kwargs.get("partial", False)
-#         )
-#         serializer.is_valid(raise_exception=True)
-#
-#         # 3) save through the serializer (runs your normalize logic)
-#         serializer.save(user=request.user)
-#
-#         # 4) pick the right status code
-#         code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
-#         return Response(serializer.data, status=code)
 
 
 class SignalSettingViewSet(
@@ -155,3 +108,18 @@ class SignalSettingViewSet(
         # 4) return 201 if it was new, otherwise 200
         code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(serializer.data, status=code)
+
+
+class AppSubscribersView(APIView):
+    permission_classes = [IsStaffPermission]
+
+    def get(self, request, app):
+        # Validate app param using AppParamSerializer
+        serializer = AppParamSerializer(data={"app": app})
+        serializer.is_valid(raise_exception=True)
+
+        data = {}
+        for threshold in SIGNAL_NOTIFICATION_TRIGGERS:
+            subscribers = list(get_app_threshold_subscribers(app, threshold))
+            data[threshold] = subscribers
+        return Response({"app": app, "thresholds": data})

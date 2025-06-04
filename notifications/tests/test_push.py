@@ -81,60 +81,6 @@ class OneSignalPushTest(UserBaseAPITestCase):
         mock_post_request.assert_called_once()
 
 
-# class OneSignalPushTest(UserBaseAPITestCase):
-#     def setUp(self) -> None:
-#         self.user = self.create_user()
-#         self.push_service = OneSignal
-#
-#     @patch("notifications.push.requests.post")
-#     def test_send_push_success(self, mock_post_request) -> None:
-#         mock_response = Mock()
-#         mock_response.status_code = 200
-#         mock_response.json.return_value = {"status": "success"}
-#         mock_post_request.return_value = mock_response
-#
-#         result = self.push_service.send_push(
-#             type=NotificationType.MARKETING.value,
-#             title=PushNotification.WELCOME_MESSAGE.title,
-#             message=PushNotification.WELCOME_MESSAGE.message,
-#             user_id=str(self.user.id),
-#         )
-#
-#         self.assertTrue(result)
-#         mock_post_request.assert_called_once_with(
-#             self.push_service.url,
-#             json=self.push_service.payload,
-#             headers=self.push_service.headers,
-#         )
-#
-#         notification = Notification.objects.get(user=self.user)
-#         self.assertEqual(notification.message, PushNotification.WELCOME_MESSAGE.message)
-#
-#     @patch("notifications.push.requests.post")
-#     def test_send_push_failure(self, mock_post_request) -> None:
-#         mock_response = Mock()
-#         mock_response.status_code = 400
-#         mock_response.json.return_value = {"status": "error"}
-#         mock_post_request.return_value = mock_response
-#
-#         result = self.push_service.send_push(
-#             type=NotificationType.MARKETING.value,
-#             title=PushNotification.WELCOME_MESSAGE.title,
-#             message=PushNotification.WELCOME_MESSAGE.message,
-#             user_id=str(self.user.id),
-#         )
-#
-#         self.assertFalse(result)
-#         mock_post_request.assert_called_once_with(
-#             self.push_service.url,
-#             json=self.push_service.payload,
-#             headers=self.push_service.headers,
-#         )
-#
-#         notification = Notification.objects.get(user=self.user)
-#         self.assertEqual(notification.message, PushNotification.WELCOME_MESSAGE.message)
-
-
 class HostPinnacleTest(UserBaseAPITestCase):
     def setUp(self) -> None:
         self.user = self.create_user()

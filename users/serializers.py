@@ -329,3 +329,7 @@ class SignalSettingSerializer(serializers.ModelSerializer):
                 existing_prefs=instance.preference or {}, incoming_prefs=incoming
             )
         return super().update(instance, validated_data)
+
+
+class AppParamSerializer(serializers.Serializer):
+    app = serializers.ChoiceField(choices=BettingApp.list())

@@ -210,7 +210,7 @@ class SignalNotificationMonitor:
     @classmethod
     def _send_notification(cls, app: str, seed: str, threshold: int) -> None:
         """Build and dispatch a push notification for a threshold crossing."""
-        title = f"{app} Signal Alert"
+        title = f"{app} Signal"
         # Format seed number to human-readable format: Seed 00 -> Seed 01, etc.
         message = f"Seed {int(seed.split()[-1]) + 1:02d} has reached {threshold}% chance. Tap to take action."
         logger.info(f"Notifying {app} {seed} subscribers for {threshold}% trigger")

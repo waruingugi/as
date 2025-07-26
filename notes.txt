@@ -2,3 +2,17 @@
 - The as-api K8 have not been tested or deployment
 - When re-deploying workers on k8, usign a 8 CPU node for each app.
 - Monitor celery CPU usage to understand whether to scale down or up
+
+- Deploy each app on single k8 node
+- Use websockets for history
+- Use websockets for probability
+- Modify Strategy for signals to show if past x signals were profitable
+- Add websites with 3 seeds
+- Rename seeds to room
+- Remove domain (slows down the app)
+- Reduce pop up time on changing settings
+- Add simple mode with settings in profile
+- Fix notifications not disappearing
+- Change strategy to statics(
+    no over 20x in last hour, last payout time, last payout(8 minutes ago), average minutes between payouts for seed today,
+   payout expected around what minute - do as suggestion)

@@ -1,48 +1,31 @@
-# config with disabled TLS (e.g. for Minikube)
-# If you want logging and metrics, uncomment below and provide the token
-#vector:
-#  customConfig:
-#    sinks:
-#      better_stack_http_sink:
-#        uri: ""
-#        auth:
-#          strategy: "bearer"
-#          token: "" # Use token provided by betterstacks
-#      better_stack_http_metrics_sink:
-#        uri: ""
-#        auth:
-#          strategy: "bearer"
-#          token: "" # Use token provided by betterstacks
-#    sources:
-#      better_stack_kubernetes_metrics_nodes:
-#        tls:
-#          verify_certificate: false
-#          verify_hostname: false
-#      better_stack_kubernetes_metrics_pods:
-#        tls:
-#          verify_certificate: false
-#          verify_hostname: false
-#
-#metrics-server:
-#  args:
-#    - --kubelet-insecure-tls
-
-# config with disabled TLS (e.g. for Minikube)
-# If you only want metrics, uncomment below and provide the token
 vector:
   customConfig:
     transforms:
-      better_stack_kubernetes_parser: ~  # Disable log transformation
+      # Drop all logs from the default log parser
+      better_stack_http_filter:
+        type: "filter"
+        inputs: ["better_stack_kubernetes_parser"]
+        condition: "false"  # Always false, so it drops everything
+
     sinks:
-      better_stack_http_sink: ~  # Remove log sink
-      better_stack_http_metrics_sink:
-        uri: ""
+      # Connect the log sink to the filter, which drops all logs
+      better_stack_http_sink:
+        uri: ""  # Add your Better Stack HTTP endpoint here
+        inputs: ["better_stack_http_filter"]
         auth:
           strategy: "bearer"
-          token: "" # Use token provided by betterstacks
-    sources:
-      better_stack_kubernetes_logs: ~  # Disable logs source
+          token: ""  # Use token provided by Better Stack
 
+      # Keep metrics sink as-is
+      better_stack_http_metrics_sink:
+        uri: ""  # Add your Better Stack HTTP metrics endpoint here
+        auth:
+          strategy: "bearer"
+          token: ""  # Use token provided by Better Stack
+
+    sources:
+      # Do NOT include better_stack_kubernetes_logs source
+      # (implicitly disabled if unused in any pipeline)
       better_stack_kubernetes_metrics_nodes:
         tls:
           verify_certificate: false

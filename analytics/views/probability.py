@@ -1,3 +1,4 @@
+from django.http import StreamingHttpResponse
 from rest_framework import status
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
@@ -29,3 +30,37 @@ class WorkerProbabilitiesView(APIView):
         serializer = WorkerProbabilitySerializer(response_data, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class WorkerProbabilitiesStreamView(APIView):
+    serializer_class = WorkerProbabilitySerializer
+
+    def get(self, request, app):
+        if app not in BettingApp.list():
+            return Response(
+                {"error": ErrorCodes.INVALID_APP_NAME.value},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        workers = Worker.objects.filter(app=app)
+        if not workers.exists():
+            raise NotFound(ErrorCodes.WORKERS_NOT_FOUND.value)
+
+        def stream():
+            yield "["
+            first = True
+            for worker in workers.iterator():
+                data = format_worker_probabilities(worker)
+                serialized = WorkerProbabilitySerializer(data).data
+                if not first:
+                    yield ","
+                else:
+                    first = False
+                import json
+
+                yield json.dumps(serialized)
+            yield "]"
+
+        return StreamingHttpResponse(
+            stream(), content_type="application/json", status=status.HTTP_200_OK
+        )

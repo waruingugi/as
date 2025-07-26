@@ -1,3 +1,5 @@
+import json
+
 from django.http import StreamingHttpResponse
 from rest_framework import status
 from rest_framework.exceptions import NotFound
@@ -47,18 +49,24 @@ class WorkerProbabilitiesStreamView(APIView):
             raise NotFound(ErrorCodes.WORKERS_NOT_FOUND.value)
 
         def stream():
+            # Start the JSON array
             yield "["
             first = True
+            # Iterate over workers using an iterator for memory efficiency
             for worker in workers.iterator():
+                # Format the worker's probability data
                 data = format_worker_probabilities(worker)
+                # Serialize the data
                 serialized = WorkerProbabilitySerializer(data).data
+                # Add a comma before each item except the first
                 if not first:
                     yield ","
                 else:
                     first = False
-                import json
 
+                # Yield the serialized data as a JSON string
                 yield json.dumps(serialized)
+            # End the JSON array
             yield "]"
 
         return StreamingHttpResponse(

@@ -100,3 +100,18 @@ class User(AbstractBaseUser, PermissionsMixin, Base):
             if hasattr(self, "subscription")
             else "none"
         )  # type: ignore
+
+
+class SignalSetting(Base):
+    """Model to store user signal setting."""
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="signal_settings"
+    )
+    preference = models.JSONField(default=None, null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self) -> str:
+        return f"{self.user} - {self.preference}"

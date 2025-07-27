@@ -1,6 +1,8 @@
 from django.urls import path
 
-from analytics.views.probability import WorkerProbabilitiesView
+from analytics.views.probability import (
+    WorkerProbabilitiesView,
+)
 
 app_name = "probabilities"
 

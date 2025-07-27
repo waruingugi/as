@@ -2,7 +2,7 @@ from django.dispatch import receiver
 
 from analytics.services.probability import Probability
 from observers.models import Multiplier, post_bulk_create
-from observers.utils import refresh_worker_crash_query
+from observers.utils import SignalNotificationMonitor, refresh_worker_crash_query
 
 
 @receiver(post_bulk_create, sender=Multiplier)
@@ -19,3 +19,8 @@ def handle_bulk_created(sender, instances, **kwargs) -> None:
 
     # Refresh query for specific worker ids
     refresh_worker_crash_query(instances)
+
+    # Alert the signal monitor
+    SignalNotificationMonitor.process_latest_payout(
+        instances[-1]
+    )  # Process the latest payout

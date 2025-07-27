@@ -26,8 +26,9 @@ class Probability(Analytics):
         worker_ids = {instance.worker_id for instance in instances}
 
         # Iterate over worker IDs and crash thresholds to recompute
+        crashes_to_monitor = CrashesToMonitor.list()
         for worker_id in worker_ids:
-            for crash_threshold in CrashesToMonitor.list():
+            for crash_threshold in crashes_to_monitor:
                 # Recompute time since last crash for each combination
                 Probability.time_since_last_crash(worker_id, crash_threshold, True)
 

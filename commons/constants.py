@@ -63,6 +63,9 @@ class CacheKeys:
     WORKER_CRASH_QUERY = "worker_id:{}:query"
     WORKER_PROBABILITY_SUGGESTION = "worker_id:{}:over{}:suggestion"
 
+    USERS_SIGNAL_SETTINGS = "users_signal_settings"
+    TRIGGER_SIGNAL_FLAGS = "trigger_signal_flags"
+
 
 class SeedName(str, Enum):
     """Seed name options."""
@@ -97,12 +100,23 @@ class SMSProvider(Enum):
 
 
 class Message(str, Enum):
-    OTP_SMS = "Your Aviator Signals verification code is {}."
+    OTP_SMS = "Your Rubani verification code is {}."
 
 
 class PushNotification:
     class WELCOME_MESSAGE:
-        title = "Welcome to Aviator Signals"
+        title = "You now have access to Rubani!"
         message = (
-            "Welcome to Aviator Signals! Got questions? - whatsapp admin on 0704845040."
+            "Welcome to Rubani - the #1 aviator signals app in Kenya. "
+            "Remember to activate your signals in the Settings page!"
         )
+
+
+# Trigger values(probabilities) for signal notifications.
+# * SHOULD BE IN INCREASING ORDER
+# * AND MATCH VALUES IN APP NOTIFICATION SETTINGS
+SIGNAL_NOTIFICATION_TRIGGERS = (80, 85, 90, 95)
+
+# Reset all triggers at this value
+# * SHOULD BE LESS THAN THE LOWEST TRIGGER IN SIGNAL_NOTIFICATION_TRIGGERS
+RESET_SIGNALS_AT_TRIGGER = 60

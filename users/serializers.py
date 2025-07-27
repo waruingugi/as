@@ -5,10 +5,12 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from commons.constants import SIGNAL_NOTIFICATION_TRIGGERS, BettingApp
 from commons.errors import ErrorCodes
 from commons.serializers import UserPhoneNumberField
 from users.constants import TOTP_LENGTH
-from users.models import User
+from users.models import SignalSetting, User
+from users.utils import default_signal_preference
 from users.validators import (
     OTPValidator,
     PhoneNumberExistsValidator,
@@ -26,7 +28,7 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
             "This account has been deactivated. Please contact support."
         ),
         "unverified_account": _(
-            "This account is not verified. Please check your SMS or email."
+            "This account is not verified. Please contact support."
         ),
     }
 
@@ -243,3 +245,91 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
             phone_number=data.get("phone_number"), otp_code=data.get("otp")
         )
         return data
+
+
+class SignalSettingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SignalSetting
+        fields = "__all__"
+        read_only_fields = ("created_at", "updated_at", "user")
+
+    def _validate_and_normalize_trigger(self, app, cfg):
+        """
+        Convert trigger to int and validate against SIGNAL_NOTIFICATION_TRIGGERS.
+        """
+        trigger = cfg.get("trigger")
+        subscribed = cfg.get("subscribed") is True
+
+        # Trigger must be specified if subscribed
+        if subscribed and trigger is None:
+            raise serializers.ValidationError(
+                {app: {"trigger": "Trigger must be specified."}}
+            )
+
+        if trigger is not None:
+            try:
+                trigger = int(trigger)  # Ensure trigger is an integer
+            except (ValueError, TypeError):
+                raise serializers.ValidationError(
+                    {app: {"trigger": f"Trigger `{trigger}` is not a valid integer."}}
+                )
+
+            # Validate trigger against allowed values
+            if trigger not in SIGNAL_NOTIFICATION_TRIGGERS:
+                raise serializers.ValidationError(
+                    {app: {"trigger": f"Trigger `{trigger}` is not allowed."}}
+                )
+            cfg["trigger"] = trigger
+
+        return cfg
+
+    def _normalize_preferences(self, existing_prefs, incoming_prefs) -> dict:
+        """
+        Method ensures that only one app can have its `subscribed` field set to True.
+        Also normalizes and validates trigger values.
+        """
+        valid_apps = set(BettingApp.list())
+        incoming_prefs = {
+            app: cfg for app, cfg in incoming_prefs.items() if app in valid_apps
+        }
+
+        normalized_preferences = {
+            app: existing_prefs.get(app, {})
+            for app in set(existing_prefs) | set(incoming_prefs)
+        }
+        normalized_preferences.update(incoming_prefs)
+
+        # Validate and normalize triggers for all apps
+        for app, cfg in normalized_preferences.items():
+            normalized_preferences[app] = self._validate_and_normalize_trigger(app, cfg)
+
+        # Ensure only one app (the newest set to subscribed) can be subscribed
+        newly_on = [app for app, cfg in incoming_prefs.items() if cfg.get("subscribed")]
+
+        if newly_on:
+            keep = newly_on[-1]
+            for app in normalized_preferences:
+                normalized_preferences[app]["subscribed"] = app == keep
+
+        return normalized_preferences
+
+    def create(self, validated_data):
+        prefs = validated_data.get("preference", {}) or {}
+        # merge against a “blank” existing prefs
+        validated_data["preference"] = self._normalize_preferences(
+            existing_prefs=default_signal_preference(),  # empty stub
+            incoming_prefs=prefs,
+        )
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if "preference" in validated_data:
+            incoming = validated_data["preference"] or {}
+            validated_data["preference"] = self._normalize_preferences(
+                existing_prefs=instance.preference or {}, incoming_prefs=incoming
+            )
+        return super().update(instance, validated_data)
+
+
+class AppParamSerializer(serializers.Serializer):
+    app = serializers.ChoiceField(choices=BettingApp.list())

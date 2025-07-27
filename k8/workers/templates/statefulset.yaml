@@ -28,6 +28,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name  # Dynamically pulls the pod's name
+            - name: SE_VNC_PASSWORD
+              value: {{ .Values.secrets.VNC_PASSWORD | quote }}
           envFrom:  # Existing block for environment variables from the secret
             - secretRef:
                 name: {{ .Values.statefulset.envSecrets.name }}

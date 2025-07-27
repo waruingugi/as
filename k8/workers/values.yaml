@@ -10,10 +10,10 @@ statefulset:
   resources:
     requests:
       memory: "512Mi"
-      cpu: "500m"
-    limits:
-      memory: "1Gi"
       cpu: "1"
+    limits:
+      memory: "2Gi"
+      cpu: "2"
   envSecrets:
     name: chrome-secrets  # Secrets name (populated dynamically in the namespace)
   podPrefix: "{{ .Values.app }}-seed"  # Prefix for StatefulSet pods

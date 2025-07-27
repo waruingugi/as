@@ -179,8 +179,11 @@ AUTH_USER_MODEL = "users.User"
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": os.environ["REDIS_URL"],
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
     }
 }
 
@@ -199,7 +202,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_THROTTLE_RATES": {
-        "authentication_throttle": "5/hour",
+        "authentication_throttle": "10/hour",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "commons.pagination.StandardPageNumberPagination",
@@ -258,7 +261,7 @@ if DEBUG:
     try:
         from aviator.local_settings import *  # noqa
     except Exception as e:  # noqa
-        pass
+        raise ImportError("Could not import aviator.local_settings")
 else:
     # Parse database configuration from $DATABASE_URL
     import dj_database_url  # noqa

@@ -11,7 +11,7 @@ from commons.tasks import send_push_task, send_sms_task
 from commons.throttles import AuthenticationThrottle
 from commons.utils import md5_hash
 from notifications.constants import NotificationType
-from users.models import User
+from users.models import SignalSetting, User
 from users.otp import create_otp
 from users.serializers import (
     OTPVerificationSerializer,
@@ -21,6 +21,7 @@ from users.serializers import (
     UserCreateSerializer,
     UserTokenObtainPairSerializer,
 )
+from users.utils import default_signal_preference
 
 
 @extend_schema(tags=["auth"])
@@ -52,14 +53,16 @@ class RegisterView(CreateAPIView):
             phone_number=phone_number, type=NotificationType.OTP.value, message=message
         )
 
-        # TODO: Disable OneSignal, build FCM instead
         # Send Push Notification Welcome Message
         send_push_task.delay(
-            type=NotificationType.MARKETING.value,
+            notification_type=NotificationType.MARKETING.value,
             title=PushNotification.WELCOME_MESSAGE.title,
             message=PushNotification.WELCOME_MESSAGE.message,
-            user_id=user.id,
+            user_ids=[user.id],
         )
+
+        # Create default signal settings for the user
+        SignalSetting.objects.create(user=user, preference=default_signal_preference())
 
         return user
 

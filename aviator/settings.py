@@ -48,6 +48,7 @@ CSRF_TRUSTED_ORIGINS: list[str] = ["https://*.fly.dev"]
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",  # For ASGI support, should be installed before 'django.contrib.staticfiles'
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -61,6 +62,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "django_filters",
+    "channels",
     # "storages", # Uncomment if hosting on Azure
     # Apps
     "observers",
@@ -255,6 +257,19 @@ SPECTACULAR_SETTINGS = {
         # "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
 }
+
+# ASGI AND CHANNELS SETTINGS FOR WEBSOCKETS
+ASGI_APPLICATION = "aviator.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ["REDIS_URL"]],
+        },
+    },
+}
+
 
 # If DEBUG=True, the system is running in dev environment so load local settings instead
 if DEBUG:

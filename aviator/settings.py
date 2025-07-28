@@ -281,7 +281,9 @@ else:
     # Parse database configuration from $DATABASE_URL
     import dj_database_url  # noqa
 
-    prod_db = dj_database_url.config(conn_max_age=500)
+    # USE CONN_MAX_AGE=0 to enable pgbouncer to handle connections.
+    # Currently, pgbouncer has been activated in Azure PostgreSQL Settings > Server Parameters
+    prod_db = dj_database_url.config(conn_max_age=0)
     DATABASES["default"].update(prod_db)
 
     # Honor the 'X-Forwarded-Proto' header for request.is_secure()

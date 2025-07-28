@@ -38,7 +38,7 @@ class WorkerModelTests(TestCase):
 
     def test_worker_with_different_name_same_seed_is_created_successfully(self) -> None:
         # Create the first Worker instance with a specific seed name
-        Worker.objects.create(app=BettingApp.BETGR8.value, name=SeedName.SEED_O2.value)
+        Worker.objects.create(app="SOME_OTHER_APP", name=SeedName.SEED_O2.value)
 
         # Create a second Worker instance with a different name but same seed name
         worker = Worker.objects.create(

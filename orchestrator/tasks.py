@@ -65,7 +65,8 @@ def find_failing_workers():
         five_minutes_ago = now() - timedelta(minutes=5)
 
         # Fetch all workers
-        workers = Worker.objects.all()
+        betting_apps = BettingApp.list()
+        workers = Worker.objects.filter(app__in=betting_apps)
 
         for worker in workers:
             # Check the most recent crash time for this worker

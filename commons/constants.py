@@ -25,8 +25,8 @@ class BettingApp(str, Enum):
     """Apps tracked by the API"""
 
     BETIKA = "BETIKA"
-    BETGR8 = "BETGR8"
-    ODIBETS = "ODIBETS"
+    # BETGR8 = "BETGR8"
+    # ODIBETS = "ODIBETS"
 
     @staticmethod
     def list():

@@ -28,12 +28,21 @@ def handle_bulk_created(sender, instances, **kwargs) -> None:
     )  # Process the latest payout
 
     # websocket notification to update probabilities
+    # channel_layer = get_channel_layer()
+    # app_name = instances[-1].worker.app  # Adjust if needed
+    #
+    # async_to_sync(channel_layer.group_send)(
+    #     f"probabilities_{app_name}",
+    #     {
+    #         "type": "probability.update",  # Calls `probability_update` in consumer
+    #     },
+    # )
     channel_layer = get_channel_layer()
-    app_name = instances[-1].worker.app  # Adjust if needed
+    app_name = instances[-1].worker.app  # Or the relevant app
 
     async_to_sync(channel_layer.group_send)(
-        f"probabilities_{app_name}",
+        f"workerhistory_{app_name}",
         {
-            "type": "probability.update",  # Calls `probability_update` in consumer
+            "type": "history.update",  # This triggers `history_update` in the consumer
         },
     )

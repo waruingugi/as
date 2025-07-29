@@ -32,6 +32,11 @@ asgi_app = get_asgi_application()
 #     websocket_urlpatterns,
 # )
 from analytics.api import websocket_urlpatterns  # noqa: E402
+from observers.api import (  # noqa: E402
+    websocket_urlpatterns as observers_websocket_urlpatterns,
+)
+
+websocket_urlpatterns += observers_websocket_urlpatterns
 
 application = ProtocolTypeRouter(
     {

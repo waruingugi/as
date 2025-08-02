@@ -234,3 +234,20 @@ class SignalNotificationMonitor:
             logger.error(
                 f"Failed to enqueue push for {app}:{seed}:{threshold} trigger -> {e}"
             )
+
+
+def set_room_name(*, app: str, worker_name: str, room_no: int | None = None) -> None:
+    """
+    k8 Pods periodically restart, which means their rooms may change.
+    This function links the room name to the seed name.
+    Example: SEED 01 -> Room 01
+    If room_no is None, it will use the worker_name to derive the room name.
+    """
+    if room_no is None:
+        room_name = worker_name
+        room_name = room_name.replace("Seed", "Room")
+    else:
+        room_name = f"Room 0{room_no}"
+
+    cache_key = CacheKeys.SEED_TO_ROOM_MAPPING.format(app, worker_name)
+    cache.set(cache_key, room_name, DEFAULT_CACHE_DURATION)

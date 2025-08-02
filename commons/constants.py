@@ -65,6 +65,7 @@ class CacheKeys:
 
     USERS_SIGNAL_SETTINGS = "users_signal_settings"
     TRIGGER_SIGNAL_FLAGS = "trigger_signal_flags"
+    SEED_TO_ROOM_MAPPING = "{}:{}"  # Map app seed to room number
 
 
 class SeedName(str, Enum):

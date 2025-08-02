@@ -15,6 +15,7 @@ class MultiplierCreateSerializer(serializers.Serializer):
             "empty": ErrorCodes.MULTIPLIERS_NOT_FOUND.value,
         },
     )
+    room_no = serializers.IntegerField(required=False)
 
 
 class MultiplierReadSerializer(serializers.ModelSerializer):

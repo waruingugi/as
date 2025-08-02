@@ -8,7 +8,7 @@ from commons.pagination import (
 from commons.permissions import IsStaffPermission, IsWorkerPermission
 from observers.models import Multiplier
 from observers.serializers import MultiplierCreateSerializer, MultiplierReadSerializer
-from observers.utils import get_new_multipliers
+from observers.utils import get_new_multipliers, set_room_name
 
 
 class MultiplierCreateView(CreateAPIView):
@@ -26,6 +26,12 @@ class MultiplierCreateView(CreateAPIView):
             Multiplier(worker=self.worker, crash=crash) for crash in new_multipliers
         ]
         Multiplier.objects.bulk_create(multipliers)
+
+        # Map the seed name to the room name
+        room_no = serializer.validated_data.get("room_no", None)
+        set_room_name(
+            app=self.worker.app, worker_name=self.worker.name, room_no=room_no
+        )
 
 
 class MultiplierListView(ListAPIView):

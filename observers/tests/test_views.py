@@ -1,11 +1,12 @@
 from unittest.mock import patch
 from uuid import uuid4
 
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from commons.constants import BettingApp, SeedName
+from commons.constants import BettingApp, CacheKeys, SeedName
 from commons.errors import ErrorCodes
 from commons.tests.test_base import UserBaseAPITestCase
 from observers.models import Multiplier
@@ -108,6 +109,26 @@ class MultiplierCreateViewTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("multipliers", response.data)
+
+    def test_room_name_is_set(self) -> None:
+        """
+        Test that the room name is set correctly in the response.
+        """
+        self.valid_data["room_no"] = 2
+        response = self.client.post(
+            self.create_url,
+            self.valid_data,
+            format="json",
+            HTTP_API_KEY=f"{self.worker.key}",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        room_name = cache.get(
+            CacheKeys.SEED_TO_ROOM_MAPPING.format(self.worker.app, self.worker.name)
+        )
+        self.assertEqual(
+            room_name, "Room 02", "Room name should be set to 02 in the cache."
+        )
 
 
 class MultiplierListViewTests(UserBaseAPITestCase):

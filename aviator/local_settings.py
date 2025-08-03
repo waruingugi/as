@@ -40,6 +40,7 @@ ALLOWED_HOSTS: list[str] = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",  # For ASGI support, should be installed before 'django.contrib.staticfiles'
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "django_filters",
+    "channels",
     # "storages", # Uncomment if hosting on Azure
     # Apps
     "observers",
@@ -234,4 +236,17 @@ SPECTACULAR_SETTINGS = {
         "rest_framework.authentication.SessionAuthentication",
         # "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+}
+
+
+# ASGI AND CHANNELS SETTINGS FOR WEBSOCKETS
+ASGI_APPLICATION = "aviator.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ["REDIS_URL"]],
+        },
+    },
 }

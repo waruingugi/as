@@ -10,6 +10,7 @@ kill_timeout = '10s'
 
 [build]
   dockerfile = 'docker/Dockerfile'
+  ignorefile = ".dockerignore"
 
 [env]
   DJANGO_SETTINGS_MODULE = 'aviator.settings'
@@ -20,37 +21,29 @@ kill_timeout = '10s'
   celery_beat = 'celery -A aviator beat -l info'
   celery_worker = 'celery -A aviator worker -l info'
 
-[http_service]
-  internal_port = 8000
-  force_https = true
-  auto_stop_machines = 'stop'
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
-
 [[services]]
   protocol = 'tcp'
   internal_port = 8000
   processes = ['app']
 
-  [[services.ports]]
-    port = 80
-    handlers = ['http']
-    force_https = true
+[[services.ports]]
+  port = 80
+  handlers = ['http']
+  force_https = true
 
-  [[services.ports]]
-    port = 443
-    handlers = ['tls', 'http']
+[[services.ports]]
+  port = 443
+  handlers = ['tls', 'http']
 
-  [services.concurrency]
-    type = 'connections'
-    hard_limit = 25
-    soft_limit = 20
+[services.concurrency]
+  type = 'connections'
+  hard_limit = 25
+  soft_limit = 20
 
-  [[services.tcp_checks]]
-    interval = '15s'
-    timeout = '5s'
-    grace_period = '5s'
+[[services.tcp_checks]]
+  interval = '15s'
+  timeout = '5s'
+  grace_period = '5s'
 
 [[vm]]
   size = 'shared-cpu-2x'

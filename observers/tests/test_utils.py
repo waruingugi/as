@@ -1,3 +1,4 @@
+import unittest
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -11,6 +12,7 @@ from observers.utils import (
     get_new_multipliers,
     get_worker_crash_list,
     get_workers_crash_history,
+    set_room_name,
 )
 from workers.models import Worker
 
@@ -268,6 +270,39 @@ class TestSignalNotificationMonitor(TestCase):
             mock_send_push.delay.assert_called_once()
             args, kwargs = mock_send_push.delay.call_args
             self.assertEqual(set(kwargs["user_ids"]), {"user1", "user2"})
+
+
+class TestSetRoomName(unittest.TestCase):
+    @patch("observers.utils.cache")
+    @patch("observers.utils.CacheKeys")
+    def test_set_room_name_with_room_no(self, mock_cache_keys, mock_cache):
+        mock_cache_keys.SEED_TO_ROOM_MAPPING = "{}:{}"
+        app = "TestApp"
+        worker_name = "Seed 01"
+        room_no = 2
+        expected_room_name = "Room 02"
+        expected_cache_key = "TestApp:Seed 01"
+
+        set_room_name(app=app, worker_name=worker_name, room_no=room_no)
+
+        mock_cache.set.assert_called_once_with(
+            expected_cache_key, expected_room_name, unittest.mock.ANY
+        )
+
+    @patch("observers.utils.cache")
+    @patch("observers.utils.CacheKeys")
+    def test_set_room_name_without_room_no(self, mock_cache_keys, mock_cache):
+        mock_cache_keys.SEED_TO_ROOM_MAPPING = "{}:{}"
+        app = "TestApp"
+        worker_name = "Seed 01"
+        expected_room_name = "Room 01"
+        expected_cache_key = "TestApp:Seed 01"
+
+        set_room_name(app=app, worker_name=worker_name)
+
+        mock_cache.set.assert_called_once_with(
+            expected_cache_key, expected_room_name, unittest.mock.ANY
+        )
 
 
 # class TestSignalNotificationMonitor(TestCase):

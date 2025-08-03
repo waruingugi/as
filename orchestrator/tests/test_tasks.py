@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from django.utils.timezone import now, timedelta
 
 from orchestrator.tasks import find_failing_workers, identify_similar_workers
+from workers.models import Worker
 
 
 class TestIdentifySimilarWorkersTask(TestCase):
@@ -53,15 +54,15 @@ class TestIdentifySimilarWorkersTask(TestCase):
 
 
 class TestFindFailingWorkers(TestCase):
-    @patch("orchestrator.tasks.Worker.objects.all")
+    @patch("orchestrator.tasks.Worker.objects.filter")
     @patch("orchestrator.tasks.Multiplier.objects.filter")
     @patch("orchestrator.tasks.reboot_worker")
     def test_all_workers_are_active(
-        self, mock_reboot_worker, mock_multiplier_filter, mock_worker_all
+        self, mock_reboot_worker, mock_multiplier_filter, mock_worker_filter
     ) -> None:
         # Mock workers
         worker = MagicMock(id=1, name="Seed 00")
-        mock_worker_all.return_value = [worker]
+        mock_worker_filter.return_value = [worker]
 
         # Mock recent crash
         three_minutes_ago = now() - timedelta(minutes=3)
@@ -79,15 +80,15 @@ class TestFindFailingWorkers(TestCase):
         # Assertions
         mock_reboot_worker.assert_not_called()
 
-    @patch("orchestrator.tasks.Worker.objects.all")
+    @patch("orchestrator.tasks.Worker.objects.filter")
     @patch("orchestrator.tasks.Multiplier.objects.filter")
     @patch("orchestrator.tasks.reboot_worker")
     def test_some_workers_are_failing(
-        self, mock_reboot_worker, mock_multiplier_filter, mock_worker_all
+        self, mock_reboot_worker, mock_multiplier_filter, mock_worker_filter
     ) -> None:
         # Mock workers
         worker = MagicMock(id=1, name="Seed 00")
-        mock_worker_all.return_value = [worker]
+        mock_worker_filter.return_value = [worker]
 
         # Mock crash posted an hour ago
         one_hour_ago = now() - timedelta(hours=1)
@@ -104,6 +105,29 @@ class TestFindFailingWorkers(TestCase):
 
         # Assertions
         mock_reboot_worker.assert_called_once_with(worker.id)
+
+    @patch("orchestrator.tasks.Multiplier.objects.filter")
+    @patch("orchestrator.tasks.reboot_worker")
+    @patch("orchestrator.tasks.BettingApp.list", return_value=["BETIKA", "BETGR8"])
+    def test_only_workers_in_betting_apps_are_tested(
+        self, mock_app_list, mock_reboot_worker, mock_multiplier_filter
+    ):
+        # Create mock workers
+        Worker.objects.all().delete()  # Clear existing workers
+        worker_in = Worker.objects.create(name="Seed 00", app="BETIKA")
+        Worker.objects.create(name="Seed 01", app="NOT_BETTING_APP")
+
+        # Only worker_in should be checked, simulate both are stale
+        mock_queryset = MagicMock()
+        mock_queryset.order_by.return_value = mock_queryset
+        mock_queryset.values_list.return_value = mock_queryset
+        mock_queryset.first.return_value = None
+        mock_multiplier_filter.return_value = mock_queryset
+
+        find_failing_workers()
+
+        # Only worker_in should be rebooted
+        mock_reboot_worker.assert_called_once_with(worker_in.id)
 
 
 #

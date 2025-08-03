@@ -48,6 +48,7 @@ CSRF_TRUSTED_ORIGINS: list[str] = ["https://*.fly.dev"]
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",  # For ASGI support, should be installed before 'django.contrib.staticfiles'
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -61,6 +62,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "django_filters",
+    "channels",
     # "storages", # Uncomment if hosting on Azure
     # Apps
     "observers",
@@ -256,6 +258,19 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
+# ASGI AND CHANNELS SETTINGS FOR WEBSOCKETS
+ASGI_APPLICATION = "aviator.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ["REDIS_URL"]],
+        },
+    },
+}
+
+
 # If DEBUG=True, the system is running in dev environment so load local settings instead
 if DEBUG:
     try:
@@ -266,7 +281,9 @@ else:
     # Parse database configuration from $DATABASE_URL
     import dj_database_url  # noqa
 
-    prod_db = dj_database_url.config(conn_max_age=500)
+    # USE CONN_MAX_AGE=0 to enable pgbouncer to handle connections.
+    # Currently, pgbouncer has been activated in Azure PostgreSQL Settings > Server Parameters
+    prod_db = dj_database_url.config(conn_max_age=0)
     DATABASES["default"].update(prod_db)
 
     # Honor the 'X-Forwarded-Proto' header for request.is_secure()

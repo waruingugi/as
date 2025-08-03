@@ -25,8 +25,8 @@ class BettingApp(str, Enum):
     """Apps tracked by the API"""
 
     BETIKA = "BETIKA"
-    BETGR8 = "BETGR8"
-    ODIBETS = "ODIBETS"
+    # BETGR8 = "BETGR8"
+    # ODIBETS = "ODIBETS"
 
     @staticmethod
     def list():
@@ -65,6 +65,7 @@ class CacheKeys:
 
     USERS_SIGNAL_SETTINGS = "users_signal_settings"
     TRIGGER_SIGNAL_FLAGS = "trigger_signal_flags"
+    SEED_TO_ROOM_MAPPING = "{}:{}"  # Map app seed to room number
 
 
 class SeedName(str, Enum):

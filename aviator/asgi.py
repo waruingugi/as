@@ -27,10 +27,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "aviator.settings")
 
 asgi_app = get_asgi_application()
 
-# Websocket URL patterns
-# ruff E402 ignored: from analytics.api import (
-#     websocket_urlpatterns,
-# )
+# IMPORTANT: Ensure that the websocket_urlpatterns are imported after the Django settings are configured.
+# This is necessary to avoid issues with the Django settings not being loaded when the websocket URL patterns
+# are defined.
 from aviator.websockets import websocket_urlpatterns  # noqa: E402
 
 application = ProtocolTypeRouter(

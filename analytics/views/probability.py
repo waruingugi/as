@@ -1,7 +1,12 @@
+import json
+
+from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
 from rest_framework import status
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import AuthenticationFailed, NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from analytics.serializers import WorkerProbabilitySerializer
 from analytics.utils import format_worker_probabilities

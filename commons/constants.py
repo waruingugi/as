@@ -116,7 +116,7 @@ class PushNotification:
 class WebSocketChannels:
     """WebSocket channel names for real-time updates."""
 
-    PROBABILITIES = "{}:probabilities"
+    PROBABILITIES = "{}_probabilities"  # Group name must be a valid unicode string with length < 100 containing only ASCII alphanumerics, hyphens, underscores, or periods.'
 
 
 # Trigger values(probabilities) for signal notifications.

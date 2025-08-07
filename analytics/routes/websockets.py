@@ -1,6 +1,6 @@
 from django.urls import path
 
-from analytics.views.probability import ProbabilityConsumer
+from analytics.views.webscokets import ProbabilityConsumer
 
 analytics_url_patterns = [
     path("ws/probabilities/<str:app>/", ProbabilityConsumer.as_asgi()),

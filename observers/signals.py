@@ -3,7 +3,7 @@ from channels.layers import get_channel_layer
 from django.dispatch import receiver
 
 from observers.models import Multiplier, post_bulk_create
-from observers.tasks import trigger_computations
+from observers.tasks import notify_websocket_groups, trigger_computations
 
 
 @receiver(post_bulk_create, sender=Multiplier)
@@ -18,6 +18,11 @@ def handle_bulk_created(sender, instances, **kwargs) -> None:
     # Trigger background computations
     instance_ids = [instance.id for instance in instances]
     trigger_computations.delay(instance_ids)
+
+    # Notify WebSocket groups
+    notify_websocket_groups.delay(
+        instances[-1].worker.app
+    )  # Assuming the last instance's worker app is the target
 
     # # Delegate to the analytics app
     # Probability.recompute_time_since_last_crash(instances)

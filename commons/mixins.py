@@ -1,16 +1,18 @@
+from channels.db import database_sync_to_async
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
-class WebSocketAuthMixin:
-    def get_token_from_scope(self) -> str | None:
+class AsyncWebSocketAuthMixin:
+    def get_token_from_scope(self) -> str:
         """Extracts the JWT token from the WebSocket scope headers."""
         headers = dict(self.scope["headers"])
         if b"authorization" not in headers:
             raise AuthenticationFailed("No authorization header")
         return headers[b"authorization"].decode("utf-8")
 
-    def authenticate_user(self) -> object | None:
+    @database_sync_to_async
+    def authenticate_user(self) -> object:
         """Authenticates the user using the JWT token from the WebSocket scope."""
         token = self.get_token_from_scope()
         jwt_auth = JWTAuthentication()

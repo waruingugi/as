@@ -23,8 +23,6 @@ from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
 
-from aviator.websockets import websocket_urlpatterns
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "aviator.settings")
 
 asgi_app = get_asgi_application()
@@ -33,6 +31,7 @@ asgi_app = get_asgi_application()
 # ruff E402 ignored: from analytics.api import (
 #     websocket_urlpatterns,
 # )
+from aviator.websockets import websocket_urlpatterns  # noqa: E402
 
 application = ProtocolTypeRouter(
     {

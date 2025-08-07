@@ -41,10 +41,12 @@ COPY --chown=admin:admin /scripts/entrypoint.sh /scripts/entrypoint.sh
 # Copy the scripts that starts the application server (runserver)
 COPY --chown=admin:admin /scripts/start-prod-server.sh /scripts/start-prod-server.sh
 
-
 # Grant execute permissions on the files
 RUN chmod +x /scripts/entrypoint.sh && \
     chmod +x /scripts/start-prod-server.sh
+
+# Set correct permissions for STATIC_ROOT
+RUN mkdir -p /home/api/staticfiles && chown -R admin:admin /home/api/staticfiles
 
 # Switch back to non-root user
 USER admin

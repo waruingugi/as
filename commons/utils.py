@@ -1,11 +1,11 @@
 from hashlib import md5, sha256
 from uuid import uuid4
 
-from channels.generic.websocket import JsonWebsocketConsumer
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.core.cache import cache
 
 from commons.constants import SIGNAL_NOTIFICATION_TRIGGERS, BettingApp, CacheKeys
-from commons.mixins import WebSocketAuthMixin
+from commons.mixins import AsyncWebSocketAuthMixin
 from users.models import SignalSetting
 
 
@@ -146,11 +146,11 @@ class UserSignalSettingsCacheManager:
 #     return user_auth_tuple[0]
 
 
-class AuthJsonWebsocketConsumer(WebSocketAuthMixin, JsonWebsocketConsumer):
-    def authenticate(self):
+class AuthJsonWebsocketConsumer(AsyncWebSocketAuthMixin, AsyncJsonWebsocketConsumer):
+    async def authenticate(self) -> bool:
         try:
-            self.scope["user"] = self.authenticate_user()
+            self.scope["user"] = await self.authenticate_user()
         except Exception:
-            self.close()
+            await self.close()
             return False
         return True

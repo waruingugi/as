@@ -1,3 +1,5 @@
+from channels.db import database_sync_to_async
+
 from analytics.serializers import WorkerProbabilitySerializer
 from analytics.utils import format_worker_probabilities
 from commons.constants import BettingApp, WebSocketChannels
@@ -7,30 +9,31 @@ from workers.models import Worker
 
 
 class ProbabilityConsumer(AuthJsonWebsocketConsumer):
-    def connect(self):
+    async def connect(self):
         if not self.authenticate():
             return
 
         self.app = self.scope["url_route"]["kwargs"]["app"]
         if self.app not in BettingApp.list():
-            self.close()
+            await self.close()
             return
 
         self.group_name = WebSocketChannels.PROBABILITIES.format(self.app)
-        self.channel_layer.group_add(self.group_name, self.channel_name)
-        self.accept()
-        self.send_probabilities()
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+        await self.send_probabilities()
 
-    def disconnect(self, close_code):
-        self.channel_layer.group_discard(self.group_name, self.channel_name)
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
-    def send_probabilities(self):
-        data = self.get_worker_probabilities(self.app)
-        self.send_json(data)
+    async def send_probabilities(self):
+        data = await self.get_worker_probabilities(self.app)
+        await self.send_json(data)
 
-    def probability_update(self, event):
-        self.send_probabilities()
+    async def probability_update(self, event):
+        await self.send_probabilities()
 
+    @database_sync_to_async
     def get_worker_probabilities(self, app):
         workers = Worker.objects.filter(app=app)
         if not workers.exists():

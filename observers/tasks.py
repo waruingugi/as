@@ -1,6 +1,9 @@
+from asgiref.sync import async_to_sync
 from celery import shared_task
+from channels.layers import get_channel_layer
 
 from analytics.services.probability import Probability
+from commons.constants import WebSocketChannels
 from commons.logger import logger
 from observers.models import Multiplier
 from observers.utils import refresh_worker_crash_query
@@ -23,3 +26,21 @@ def trigger_computations(multiplier_ids: list) -> None:
 
     # Refresh payout history for specific worker ids
     refresh_worker_crash_query(instances)
+
+
+@shared_task
+def notify_websocket_groups(app_name: str) -> None:
+    """
+    Update WebSocket channels for the given app.
+    This function can be used to notify connected clients about updates.
+    """
+
+    channel_layer = get_channel_layer()
+
+    # Notify the probabilities group
+    async_to_sync(channel_layer.group_send)(
+        WebSocketChannels.PROBABILITIES.format(app_name),
+        {
+            "type": "probability.update",  # Calls `probability_update` in consumer
+        },
+    )

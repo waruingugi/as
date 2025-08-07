@@ -1,6 +1,6 @@
-from django.urls import path, re_path
+from django.urls import path
 
-from observers.views.history import WorkerHistoryConsumer, WorkerHistoryView
+from observers.views.history import WorkerHistoryView
 from observers.views.multipliers import MultiplierCreateView, MultiplierListView
 
 app_name = "multipliers"
@@ -11,6 +11,6 @@ urlpatterns = [
     path("history/<str:app>/", WorkerHistoryView.as_view(), name="history"),
 ]
 
-websocket_urlpatterns = [
-    re_path(r"ws/history/(?P<app>\w+)/$", WorkerHistoryConsumer.as_asgi()),
-]
+# websocket_urlpatterns = [
+#     re_path(r"ws/history/(?P<app>\w+)/$", WorkerHistoryConsumer.as_asgi()),
+# ]

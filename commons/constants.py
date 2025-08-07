@@ -112,6 +112,12 @@ class PushNotification:
         )
 
 
+class WebSocketChannels:
+    """WebSocket channel names for real-time updates."""
+
+    PROBABILITIES = "{}:probabilities"
+
+
 # Trigger values(probabilities) for signal notifications.
 # * SHOULD BE IN INCREASING ORDER
 # * AND MATCH VALUES IN APP NOTIFICATION SETTINGS

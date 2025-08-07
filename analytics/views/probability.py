@@ -36,9 +36,6 @@ class WorkerProbabilitiesView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# consumers.py
-
-
 class ProbabilityConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         # Authenticate JWT from query string

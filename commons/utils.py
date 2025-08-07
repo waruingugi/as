@@ -1,9 +1,11 @@
 from hashlib import md5, sha256
 from uuid import uuid4
 
+from channels.generic.websocket import JsonWebsocketConsumer
 from django.core.cache import cache
 
 from commons.constants import SIGNAL_NOTIFICATION_TRIGGERS, BettingApp, CacheKeys
+from commons.mixins import WebSocketAuthMixin
 from users.models import SignalSetting
 
 
@@ -121,3 +123,34 @@ class UserSignalSettingsCacheManager:
             self.users_signal_prefs,
             timeout=self.CACHE_TIMEOUT,
         )
+
+
+#
+# def get_authorization_header_from_scope(scope) -> str:
+#     headers = dict(scope["headers"])
+#     if b"authorization" not in headers:
+#         raise AuthenticationFailed("No authorization header")
+#     return headers[b"authorization"].decode("utf-8")
+#
+# def authenticate_user_from_scope(scope):
+#     auth_header = get_authorization_header_from_scope(scope)
+#     jwt_auth = JWTAuthentication()
+#
+#     # Emulate DRF request object with META headers
+#     request = type("Request", (), {"META": {"HTTP_AUTHORIZATION": auth_header}})
+#     user_auth_tuple = jwt_auth.authenticate(request)
+#
+#     if user_auth_tuple is None:
+#         raise AuthenticationFailed("Invalid token")
+#
+#     return user_auth_tuple[0]
+
+
+class AuthJsonWebsocketConsumer(WebSocketAuthMixin, JsonWebsocketConsumer):
+    def authenticate(self):
+        try:
+            self.scope["user"] = self.authenticate_user()
+        except Exception:
+            self.close()
+            return False
+        return True

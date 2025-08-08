@@ -16,5 +16,5 @@ python manage.py migrate
 # Use daphne for ASGI applications (because we have WebSocket support)
 # Otherwise use gunicorn for WSGI applications (uncomment the gunicorn line above)
 echo "Starting Daphne..."
-daphne --bind 0.0.0.0 -p 8000 aviator.asgi:application
+daphne --application-close-timeout 30 -b 0.0.0.0 -p 8000 aviator.asgi:application
 

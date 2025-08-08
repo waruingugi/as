@@ -10,7 +10,3 @@ urlpatterns = [
     path("", MultiplierListView.as_view(), name="list"),
     path("history/<str:app>/", WorkerHistoryView.as_view(), name="history"),
 ]
-
-# websocket_urlpatterns = [
-#     re_path(r"ws/history/(?P<app>\w+)/$", WorkerHistoryConsumer.as_asgi()),
-# ]

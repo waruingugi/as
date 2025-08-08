@@ -1,6 +1,6 @@
-from django.urls import path, re_path
+from django.urls import path
 
-from observers.views.history import WorkerHistoryConsumer, WorkerHistoryView
+from observers.views.history import WorkerHistoryView
 from observers.views.multipliers import MultiplierCreateView, MultiplierListView
 
 app_name = "multipliers"

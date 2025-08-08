@@ -23,6 +23,14 @@ def generate_hash(value: str) -> str:
     return hash_obj.hexdigest()
 
 
+def get_worker_health(worker_id: str) -> bool:
+    """This function checks the health of a worker by looking up its health status in the cache.
+    If the worker's health status is not found in the cache, it defaults to True (healthy).
+    """
+    cache_key = CacheKeys.WORKER_IS_HEALTHY.format(worker_id)
+    return cache.get(cache_key, True)  # Default to True if not found
+
+
 class UserSignalSettingsCacheManager:
     """
     Class to handle updating and refreshing the users_signal_prefs cache.

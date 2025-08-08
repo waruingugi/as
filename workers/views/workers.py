@@ -1,4 +1,3 @@
-from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status
 from rest_framework.generics import (
@@ -10,9 +9,9 @@ from rest_framework.generics import (
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from commons.constants import CacheKeys
 from commons.pagination import StandardPageNumberPagination
 from commons.permissions import IsStaffPermission
+from commons.utils import get_worker_health
 from workers.filters import WorkerFilter
 from workers.models import Worker
 from workers.serializers import (
@@ -66,9 +65,7 @@ class WorkersHealthView(APIView):
         if workers.exists():
             data = []
             for worker in workers:
-                worker_is_healthy = cache.get(
-                    CacheKeys.WORKER_IS_HEALTHY.format(worker.id), True
-                )
+                worker_is_healthy = get_worker_health(str(worker.id))
                 worker_status = "ok" if worker_is_healthy else "error"
 
                 data.append(

@@ -31,6 +31,14 @@ def get_worker_health(worker_id: str) -> bool:
     return cache.get(cache_key, True)  # Default to True if not found
 
 
+def get_room_name(app: str, worker_name: str) -> str:
+    """Get the room name of the worker based on the app and seed."""
+    cache_key = CacheKeys.SEED_TO_ROOM_MAPPING.format(app, worker_name)
+    room_name = cache.get(cache_key)
+    room_name = worker_name.replace("Seed", "Room") if room_name is None else room_name
+    return room_name
+
+
 class UserSignalSettingsCacheManager:
     """
     Class to handle updating and refreshing the users_signal_prefs cache.

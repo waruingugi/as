@@ -4,7 +4,11 @@ from channels.db import database_sync_to_async
 
 from analytics.serializers import WorkerProbabilitySerializer
 from analytics.utils import format_worker_probabilities
-from commons.constants import BettingApp, WebSocketChannels
+from commons.constants import (
+    WEBSOCKET_MAX_LIFETIME_SECONDS,
+    BettingApp,
+    WebSocketChannels,
+)
 from commons.errors import ErrorCodes
 from commons.utils import AuthJsonWebsocketConsumer
 from workers.models import Worker
@@ -14,7 +18,7 @@ class ProbabilityConsumer(AuthJsonWebsocketConsumer):
     keepalive_task = None
     max_lifetime_task = None  # hard max lifetime task
 
-    MAX_LIFETIME_SECONDS = 1800  # 30 minutes
+    MAX_LIFETIME_SECONDS = WEBSOCKET_MAX_LIFETIME_SECONDS
 
     async def connect(self):
         if not self.authenticate():

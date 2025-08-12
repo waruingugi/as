@@ -1,7 +1,11 @@
 from django.dispatch import receiver
 
 from observers.models import Multiplier, post_bulk_create
-from observers.tasks import notify_websocket_groups, trigger_computations
+from observers.tasks import (
+    broadcast_history_task,
+    broadcast_probability_task,
+    trigger_computations_task,
+)
 
 
 @receiver(post_bulk_create, sender=Multiplier)
@@ -15,12 +19,14 @@ def handle_bulk_created(sender, instances, **kwargs) -> None:
 
     # Trigger background computations
     instance_ids = [instance.id for instance in instances]
-    trigger_computations.delay(instance_ids)
+    trigger_computations_task.delay(instance_ids)
 
-    # Notify WebSocket groups
-    notify_websocket_groups.delay(
+    # Broadcast probabilities and history updates
+    broadcast_probability_task.delay(
         instances[-1].worker.app
     )  # Assuming the last instance's worker app is the target
+
+    broadcast_history_task.delay(instances[-1].worker.app)
 
     # # Delegate to the analytics app
     # Probability.recompute_time_since_last_crash(instances)

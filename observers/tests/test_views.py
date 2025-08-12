@@ -214,6 +214,7 @@ class TestWorkerHistoryView(UserBaseAPITestCase):
             {
                 "id": self.worker1.id,
                 "name": self.worker1.name,
+                "room_name": "Room 02",
                 "crash": [
                     {"created_at": "2025-01-27T10:00:00Z", "crash": 15.5},
                     {"created_at": "2025-01-27T09:00:00Z", "crash": 10.0},
@@ -222,6 +223,7 @@ class TestWorkerHistoryView(UserBaseAPITestCase):
             {
                 "id": self.worker2.id,
                 "name": self.worker2.name,
+                "room_name": "Room 01",
                 "crash": [
                     {"created_at": "2025-01-27T08:00:00Z", "crash": 7.0},
                     {"created_at": "2025-01-27T07:00:00Z", "crash": 5.0},

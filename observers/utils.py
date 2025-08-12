@@ -15,6 +15,7 @@ from commons.constants import (
 )
 from commons.logger import logger
 from commons.tasks import send_push_task
+from commons.utils import get_room_name
 from notifications.constants import (
     NotificationChannel,
 )
@@ -94,7 +95,14 @@ def get_workers_crash_history(
             if crash_list is None:
                 crash_list = get_worker_crash_list(worker.id, count)  # type: ignore
 
-        data.append({"id": worker.id, "name": worker.name, "crash": crash_list})
+        data.append(
+            {
+                "id": worker.id,
+                "name": worker.name,
+                "room_name": get_room_name(worker.app, worker.name),
+                "crash": crash_list,
+            }
+        )
 
     return data
 

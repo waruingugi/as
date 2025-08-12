@@ -6,11 +6,13 @@ from analytics.services.probability import Probability
 from commons.constants import WebSocketChannels
 from commons.logger import logger
 from observers.models import Multiplier
-from observers.utils import refresh_worker_crash_query
+from observers.utils import (
+    refresh_worker_crash_query,
+)
 
 
 @shared_task
-def trigger_computations(multiplier_ids: list) -> None:
+def trigger_computations_task(multiplier_ids: list) -> None:
     """
     Trigger computations:
     - Update probabilities for seeds
@@ -29,7 +31,7 @@ def trigger_computations(multiplier_ids: list) -> None:
 
 
 @shared_task
-def notify_websocket_groups(app_name: str) -> None:
+def broadcast_probability_task(app_name: str) -> None:
     """
     Update WebSocket channels for the given app.
     This function can be used to notify connected clients about updates.
@@ -42,5 +44,23 @@ def notify_websocket_groups(app_name: str) -> None:
         WebSocketChannels.PROBABILITIES.format(app_name),
         {
             "type": "probability.update",  # Calls `probability_update` in consumer
+        },
+    )
+
+
+@shared_task
+def broadcast_history_task(app_name: str) -> None:
+    """
+    Update WebSocket channels for the given app's history.
+    This function can be used to notify connected clients about updates.
+    """
+
+    channel_layer = get_channel_layer()
+
+    # Notify the history group
+    async_to_sync(channel_layer.group_send)(
+        WebSocketChannels.HISTORY.format(app_name),
+        {
+            "type": "history.update",  # Calls `history_update` in consumer
         },
     )

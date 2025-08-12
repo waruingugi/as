@@ -35,4 +35,5 @@ class CrashSerializer(serializers.Serializer):
 class WorkerHistorySerializer(serializers.Serializer):
     id = serializers.UUIDField()
     name = serializers.CharField()
+    room_name = serializers.CharField()
     crash = serializers.ListField(child=CrashSerializer())

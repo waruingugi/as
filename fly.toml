@@ -10,7 +10,6 @@ kill_timeout = '10s'
 
 [build]
   dockerfile = 'docker/Dockerfile'
-  ignorefile = ".dockerignore"
 
 [env]
   DJANGO_SETTINGS_MODULE = 'aviator.settings'
@@ -20,6 +19,11 @@ kill_timeout = '10s'
   app = ''
   celery_beat = 'celery -A aviator beat -l info'
   celery_worker = 'celery -A aviator worker -l info'
+
+
+[[statics]]
+  guest_path = "/home/api/staticfiles"
+  url_prefix = "/static/"
 
 [[services]]
   protocol = 'tcp'
@@ -37,8 +41,8 @@ kill_timeout = '10s'
 
 [services.concurrency]
   type = 'connections'
-  hard_limit = 25
-  soft_limit = 20
+  hard_limit = 250
+  soft_limit = 200
 
 [[services.tcp_checks]]
   interval = '15s'

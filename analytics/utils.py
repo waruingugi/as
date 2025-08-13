@@ -6,6 +6,7 @@ from django.core.cache import cache
 from analytics.constants import OVER_20X_SUGGESTIONS, CrashesToMonitor
 from analytics.services import Probability
 from commons.constants import CacheKeys
+from commons.utils import get_room_name, get_worker_health
 
 
 def format_worker_probabilities(worker) -> dict:
@@ -26,6 +27,8 @@ def format_worker_probabilities(worker) -> dict:
     return {
         "id": worker.id,
         "name": worker.name,
+        "room_name": get_room_name(worker.app, worker.name),
+        "is_healthy": get_worker_health(str(worker.id)),
         "probability": probabilities,
     }
 

@@ -10,4 +10,6 @@ class ProbabilitySerializer(serializers.Serializer):
 class WorkerProbabilitySerializer(serializers.Serializer):
     id = serializers.UUIDField()
     name = serializers.CharField()
+    room_name = serializers.CharField()
+    is_healthy = serializers.BooleanField()
     probability = serializers.DictField(child=ProbabilitySerializer())

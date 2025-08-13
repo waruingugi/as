@@ -1,9 +1,11 @@
 from hashlib import md5, sha256
 from uuid import uuid4
 
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.core.cache import cache
 
 from commons.constants import SIGNAL_NOTIFICATION_TRIGGERS, BettingApp, CacheKeys
+from commons.mixins import AsyncWebSocketAuthMixin
 from users.models import SignalSetting
 
 
@@ -19,6 +21,22 @@ def generate_uuid() -> str:
 def generate_hash(value: str) -> str:
     hash_obj = sha256(value.encode())
     return hash_obj.hexdigest()
+
+
+def get_worker_health(worker_id: str) -> bool:
+    """This function checks the health of a worker by looking up its health status in the cache.
+    If the worker's health status is not found in the cache, it defaults to True (healthy).
+    """
+    cache_key = CacheKeys.WORKER_IS_HEALTHY.format(worker_id)
+    return cache.get(cache_key, True)  # Default to True if not found
+
+
+def get_room_name(app: str, worker_name: str) -> str:
+    """Get the room name of the worker based on the app and seed."""
+    cache_key = CacheKeys.SEED_TO_ROOM_MAPPING.format(app, worker_name)
+    room_name = cache.get(cache_key)
+    room_name = worker_name.replace("Seed", "Room") if room_name is None else room_name
+    return room_name
 
 
 class UserSignalSettingsCacheManager:
@@ -121,3 +139,34 @@ class UserSignalSettingsCacheManager:
             self.users_signal_prefs,
             timeout=self.CACHE_TIMEOUT,
         )
+
+
+#
+# def get_authorization_header_from_scope(scope) -> str:
+#     headers = dict(scope["headers"])
+#     if b"authorization" not in headers:
+#         raise AuthenticationFailed("No authorization header")
+#     return headers[b"authorization"].decode("utf-8")
+#
+# def authenticate_user_from_scope(scope):
+#     auth_header = get_authorization_header_from_scope(scope)
+#     jwt_auth = JWTAuthentication()
+#
+#     # Emulate DRF request object with META headers
+#     request = type("Request", (), {"META": {"HTTP_AUTHORIZATION": auth_header}})
+#     user_auth_tuple = jwt_auth.authenticate(request)
+#
+#     if user_auth_tuple is None:
+#         raise AuthenticationFailed("Invalid token")
+#
+#     return user_auth_tuple[0]
+
+
+class AuthJsonWebsocketConsumer(AsyncWebSocketAuthMixin, AsyncJsonWebsocketConsumer):
+    async def authenticate(self) -> bool:
+        try:
+            self.scope["user"] = await self.authenticate_user()
+        except Exception:
+            await self.close()
+            return False
+        return True

@@ -67,6 +67,10 @@ class CacheKeys:
     TRIGGER_SIGNAL_FLAGS = "trigger_signal_flags"
     SEED_TO_ROOM_MAPPING = "{}:{}"  # Map app seed to room number
 
+    SIGNAL_RECORD = (
+        "worker_id:{}:signal_record"  # Store signal records for a specific worker
+    )
+
 
 class SeedName(str, Enum):
     """Seed name options."""

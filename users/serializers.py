@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from commons.constants import SIGNAL_NOTIFICATION_TRIGGERS, BettingApp
+from commons.constants import BettingApp
 from commons.errors import ErrorCodes
 from commons.serializers import UserPhoneNumberField
 from users.constants import TOTP_LENGTH
@@ -253,35 +253,35 @@ class SignalSettingSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ("created_at", "updated_at", "user")
 
-    def _validate_and_normalize_trigger(self, app, cfg):
-        """
-        Convert trigger to int and validate against SIGNAL_NOTIFICATION_TRIGGERS.
-        """
-        trigger = cfg.get("trigger")
-        subscribed = cfg.get("subscribed") is True
-
-        # Trigger must be specified if subscribed
-        if subscribed and trigger is None:
-            raise serializers.ValidationError(
-                {app: {"trigger": "Trigger must be specified."}}
-            )
-
-        if trigger is not None:
-            try:
-                trigger = int(trigger)  # Ensure trigger is an integer
-            except (ValueError, TypeError):
-                raise serializers.ValidationError(
-                    {app: {"trigger": f"Trigger `{trigger}` is not a valid integer."}}
-                )
-
-            # Validate trigger against allowed values
-            if trigger not in SIGNAL_NOTIFICATION_TRIGGERS:
-                raise serializers.ValidationError(
-                    {app: {"trigger": f"Trigger `{trigger}` is not allowed."}}
-                )
-            cfg["trigger"] = trigger
-
-        return cfg
+    # def _validate_and_normalize_trigger(self, app, cfg):
+    #     """
+    #     Convert trigger to int and validate against SIGNAL_NOTIFICATION_TRIGGERS.
+    #     """
+    #     trigger = cfg.get("trigger")
+    #     subscribed = cfg.get("subscribed") is True
+    #
+    #     # Trigger must be specified if subscribed
+    #     if subscribed and trigger is None:
+    #         raise serializers.ValidationError(
+    #             {app: {"trigger": "Trigger must be specified."}}
+    #         )
+    #
+    #     if trigger is not None:
+    #         try:
+    #             trigger = int(trigger)  # Ensure trigger is an integer
+    #         except (ValueError, TypeError):
+    #             raise serializers.ValidationError(
+    #                 {app: {"trigger": f"Trigger `{trigger}` is not a valid integer."}}
+    #             )
+    #
+    #         # Validate trigger against allowed values
+    #         if trigger not in SIGNAL_NOTIFICATION_TRIGGERS:
+    #             raise serializers.ValidationError(
+    #                 {app: {"trigger": f"Trigger `{trigger}` is not allowed."}}
+    #             )
+    #         cfg["trigger"] = trigger
+    #
+    #     return cfg
 
     def _normalize_preferences(self, existing_prefs, incoming_prefs) -> dict:
         """
@@ -299,9 +299,9 @@ class SignalSettingSerializer(serializers.ModelSerializer):
         }
         normalized_preferences.update(incoming_prefs)
 
-        # Validate and normalize triggers for all apps
-        for app, cfg in normalized_preferences.items():
-            normalized_preferences[app] = self._validate_and_normalize_trigger(app, cfg)
+        # # Validate and normalize triggers for all apps
+        # for app, cfg in normalized_preferences.items():
+        #     normalized_preferences[app] = self._validate_and_normalize_trigger(app, cfg)
 
         # Ensure only one app (the newest set to subscribed) can be subscribed
         newly_on = [app for app, cfg in incoming_prefs.items() if cfg.get("subscribed")]

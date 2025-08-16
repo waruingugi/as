@@ -7,6 +7,6 @@ def default_signal_preference() -> dict:
     for app in BettingApp.list():
         default_preference[app] = {
             "subscribed": False,
-            "trigger": None,
+            # "trigger": None,
         }
     return default_preference

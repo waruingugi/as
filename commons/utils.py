@@ -4,7 +4,7 @@ from uuid import uuid4
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.core.cache import cache
 
-from commons.constants import SIGNAL_NOTIFICATION_TRIGGERS, BettingApp, CacheKeys
+from commons.constants import BettingApp, CacheKeys
 from commons.mixins import AsyncWebSocketAuthMixin
 from users.models import SignalSetting
 
@@ -97,38 +97,25 @@ class UserSignalSettingsCacheManager:
         Remove user from cache if unsubscribed or invalid trigger.
         """
         for app, data in self.instance.preference.items():
-            trigger = data.get("trigger")
-            if (
-                app not in self.betting_apps
-                or not data.get("subscribed")
-                or trigger not in SIGNAL_NOTIFICATION_TRIGGERS
-            ):
-                self.users_signal_prefs.get(app, {}).get(trigger, set()).discard(
-                    str(self.instance.user_id)
-                )
+            if app not in self.betting_apps or not data.get("subscribed"):
+                if app in self.users_signal_prefs:
+                    self.users_signal_prefs[app].discard(str(self.instance.user_id))
 
     def _remove_previous_preferences(self) -> None:
         """
         Remove user from all triggers for all apps in the cache where the user has subscribed to.
         """
-        for app, triggers in self.users_signal_prefs.items():
-            for trigger_set in triggers.values():
-                trigger_set.discard(str(self.instance.user_id))
+        for app in self.users_signal_prefs.values():
+            app.discard(str(self.instance.user_id))
 
     def _add_valid_preferences(self) -> None:
         """
         Add or update user in cache for valid preferences.
         """
         for app, data in self.instance.preference.items():
-            if (
-                app in self.betting_apps
-                and data.get("subscribed")
-                and data.get("trigger") in SIGNAL_NOTIFICATION_TRIGGERS
-            ):
-                self.users_signal_prefs.setdefault(app, {})
-                self.users_signal_prefs[app].setdefault(data["trigger"], set()).add(
-                    str(self.instance.user_id)
-                )
+            if app in self.betting_apps and data.get("subscribed"):
+                self.users_signal_prefs.setdefault(app, set())
+                self.users_signal_prefs[app].add(str(self.instance.user_id))
 
     def _save_cache(self) -> None:
         """

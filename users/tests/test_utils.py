@@ -16,9 +16,9 @@ class TestGenerateDefaultSignalPref(TestCase):
 
         # Expected result
         expected_result = {
-            "App1": {"subscribed": False, "trigger": None},
-            "App2": {"subscribed": False, "trigger": None},
-            "App3": {"subscribed": False, "trigger": None},
+            "App1": {"subscribed": False},
+            "App2": {"subscribed": False},
+            "App3": {"subscribed": False},
         }
 
         # Assertions

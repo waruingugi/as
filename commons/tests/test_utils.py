@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from commons.constants import SIGNAL_NOTIFICATION_TRIGGERS, CacheKeys
+from commons.constants import CacheKeys
 from commons.utils import UserSignalSettingsCacheManager
 
 
@@ -11,16 +11,15 @@ class TestUserSignalSettingsCacheManager(TestCase):
         self.mock_instance = MagicMock()
         self.user_id1, self.user_id2 = "1", "2"
         self.mock_instance.user_id = self.user_id1
-        self.trigger1 = SIGNAL_NOTIFICATION_TRIGGERS[0]
-        self.trigger2 = SIGNAL_NOTIFICATION_TRIGGERS[1]
+
         self.mock_instance.preference = {
-            "app1": {"subscribed": True, "trigger": self.trigger1},
-            "app2": {"subscribed": False, "trigger": self.trigger2},
+            "app1": {"subscribed": True},
+            "app2": {"subscribed": False},
         }
 
         self.mock_cache_data = {
-            "app1": {self.trigger1: {self.user_id1}},
-            "app2": {self.trigger2: {self.user_id1}},
+            "app1": {self.user_id1},
+            "app2": {self.user_id1},
         }
 
     @patch("commons.utils.cache")
@@ -33,8 +32,8 @@ class TestUserSignalSettingsCacheManager(TestCase):
         mock_cache.set.assert_called_once_with(
             CacheKeys.USERS_SIGNAL_SETTINGS,
             {
-                "app1": {self.trigger1: {self.user_id1}},
-                "app2": {self.trigger2: set()},
+                "app1": {self.user_id1},
+                "app2": set(),
             },
             timeout=None,
         )
@@ -49,10 +48,8 @@ class TestUserSignalSettingsCacheManager(TestCase):
 
         manager._remove_invalid_preferences()
 
-        self.assertIn(self.user_id1, manager.users_signal_prefs["app1"][self.trigger1])
-        self.assertNotIn(
-            self.user_id1, manager.users_signal_prefs["app2"][self.trigger2]
-        )
+        self.assertIn(self.user_id1, manager.users_signal_prefs["app1"])
+        self.assertNotIn(self.user_id1, manager.users_signal_prefs["app2"])
 
     @patch("commons.utils.cache")
     @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
@@ -62,21 +59,15 @@ class TestUserSignalSettingsCacheManager(TestCase):
         """
         Test that submitting a new trigger for the same app removes the user from the old trigger set.
         """
-        # Initial cache: user subscribed to trigger 80 for app1
-        trigger_80 = 80
-        trigger_90 = 90
         self.mock_cache_data = {
-            "app1": {trigger_80: {self.user_id1}},
+            "app1": {self.user_id1},
         }
         self.mock_instance.preference = {
-            "app1": {"subscribed": True, "trigger": trigger_90},
+            "app1": {"subscribed": True},
         }
         manager = UserSignalSettingsCacheManager(self.mock_instance)
         manager._remove_invalid_preferences()
-        # User should not be in trigger_80 set anymore
-        self.assertNotIn(
-            self.user_id1, manager.users_signal_prefs["app1"].get(trigger_80, set())
-        )
+        self.assertNotIn(self.user_id1, manager.users_signal_prefs["app1"])
 
     @patch("commons.utils.cache")
     @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
@@ -86,8 +77,8 @@ class TestUserSignalSettingsCacheManager(TestCase):
 
         manager._add_valid_preferences()
 
-        self.assertIn(self.user_id1, manager.users_signal_prefs["app1"][self.trigger1])
-        self.assertIn(self.user_id1, manager.users_signal_prefs["app2"][self.trigger2])
+        self.assertIn(self.user_id1, manager.users_signal_prefs["app1"])
+        self.assertIn(self.user_id1, manager.users_signal_prefs["app2"])
 
     @patch("commons.utils.cache")
     @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
@@ -103,15 +94,15 @@ class TestUserSignalSettingsCacheManager(TestCase):
         # Mock signal settings for multiple users
         mock_signal_setting_1 = MagicMock()
         mock_signal_setting_1.preference = {
-            "app1": {"subscribed": True, "trigger": self.trigger1},
-            "app2": {"subscribed": False, "trigger": self.trigger2},
+            "app1": {"subscribed": True},
+            "app2": {"subscribed": False},
         }
         mock_signal_setting_1.user_id = 1
 
         mock_signal_setting_2 = MagicMock()
         mock_signal_setting_2.preference = {
-            "app1": {"subscribed": True, "trigger": self.trigger1},
-            "app3": {"subscribed": True, "trigger": self.trigger2},
+            "app1": {"subscribed": True},
+            "app3": {"subscribed": True},
         }
         mock_signal_setting_2.user_id = self.user_id2
 
@@ -127,9 +118,9 @@ class TestUserSignalSettingsCacheManager(TestCase):
         mock_cache.set.assert_called_once_with(
             CacheKeys.USERS_SIGNAL_SETTINGS,
             {
-                "app1": {self.trigger1: {self.user_id1, self.user_id2}},
-                "app2": {self.trigger2: set()},
-                "app3": {self.trigger2: {self.user_id2}},
+                "app1": {self.user_id1, self.user_id2},
+                "app2": set(),
+                "app3": {self.user_id2},
             },
             timeout=None,
         )

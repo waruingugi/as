@@ -4,7 +4,12 @@ from datetime import datetime, timedelta
 from django.core.cache import cache
 
 from commons.constants import CacheKeys
+from commons.logger import logger
+from commons.tasks import send_push_task
+from commons.utils import get_room_name
+from notifications.constants import NotificationChannel
 from observers.models import Multiplier
+from observers.utils import get_app_subscribers
 
 
 @dataclass
@@ -16,6 +21,7 @@ class SignalRecord:
 
     app_name: str
     worker_id: str
+    seed_name: str
     triggered_by_payout_id: str | None = field(default=None)
     triggered_at: datetime | None = field(default=None)
     remaining_rounds: int = field(default=0)
@@ -52,6 +58,23 @@ class SignalEngineService:
     def __init__(self):
         self.instance = None
         self.signal_config = SignalConfig()
+
+    def _generate_default_record_values(self) -> dict:
+        """
+        Generate a new signal record with default values.
+        This is used to reset the signal engine.
+        """
+        signal_record = SignalRecord(
+            app_name=self.instance.worker.app,
+            worker_id=str(self.instance.worker.id),
+            seed_name=self.instance.worker.name,
+            triggered_by_payout_id=None,
+            triggered_at=None,
+            remaining_rounds=self.signal_config.window_rounds,
+            profit_window_rounds=self.signal_config.window_rounds,
+            triggered_recently=False,
+        )
+        return asdict(signal_record)
 
     def _has_cluster(self) -> bool:
         """
@@ -129,7 +152,7 @@ class SignalEngineService:
         Check if the signal has been triggered recently.
         This prevents sending multiple signals in a short time frame.
         """
-        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker_id)
+        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker.id)
         signal_record_data = cache.get(cache_key)
         return signal_record_data.get("triggered_recently", False)
 
@@ -144,37 +167,32 @@ class SignalEngineService:
             and not self._has_been_triggered_recently()
         )
 
-    def _update_signal(self) -> dict:
+    def _update_signal(self) -> dict | None:
         """
         Update the signal engine with a new signal record.
         Decrements the remaining_rounds for the signal record in the cache by 1.
         """
-        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker_id)
-        signal_record_data = cache.get(cache_key) or {}
+        logger.info(
+            f"Updating signal record for worker: {self.instance.worker.app} {self.instance.worker.name}"
+        )
+        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker.id)
+        signal_record_data = (
+            cache.get(cache_key) or self._generate_default_record_values()
+        )
 
         # Calculate remaining_rounds based on rounds since trigger payout
         trigger_id = signal_record_data.get("triggered_by_payout_id")
         worker_id = signal_record_data.get("worker_id")
 
-        if trigger_id and worker_id:  # Safety check
-            try:
-                trigger_payout = Multiplier.objects.get(
-                    id=trigger_id, worker_id=worker_id
-                )
-                rounds_passed = (
-                    Multiplier.objects.filter(  # Count rounds since trigger payout
-                        worker_id=worker_id,
-                        created_at__gt=trigger_payout.created_at,
-                        created_at__lte=self.instance.created_at,
-                    ).count()
-                )
-                remaining = max(  # Calculate remaining rounds
-                    0, self.signal_config.window_rounds - rounds_passed
-                )
-            except Multiplier.DoesNotExist:
-                remaining = self.signal_config.window_rounds
-        else:
-            remaining = self.signal_config.window_rounds
+        trigger_payout = Multiplier.objects.get(id=trigger_id)
+        rounds_passed = Multiplier.objects.filter(  # Count rounds since trigger payout
+            worker__id=worker_id,
+            created_at__gt=trigger_payout.created_at,
+            created_at__lte=self.instance.created_at,
+        ).count()
+        remaining = max(  # Calculate remaining rounds
+            0, self.signal_config.window_rounds - rounds_passed
+        )
 
         signal_record_data["remaining_rounds"] = remaining
         updated_signal_record = SignalRecord(**signal_record_data)
@@ -187,16 +205,12 @@ class SignalEngineService:
 
     def _reset_signal(self) -> dict:
         """Update the status of the signal record"""
-        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker_id)
-        default_values = {
-            "app_name": self.instance.worker.app,
-            "worker_id": str(self.instance.worker_id),
-            "triggered_by_payout_id": None,  # Resetting the trigger payout ID
-            "triggered_at": None,
-            "remaining_rounds": self.signal_config.window_rounds,
-            "profit_window_rounds": self.signal_config.window_rounds,
-            "triggered_recently": False,
-        }
+        logger.info(
+            f"Resetting signal record for worker: {self.instance.worker.app} {self.instance.worker.name}"
+        )
+        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker.id)
+
+        default_values = self._generate_default_record_values()
 
         signal_record_data = cache.get(cache_key) or {}
         # Merge existing data with defaults, prioritizing reset values
@@ -213,10 +227,14 @@ class SignalEngineService:
         Trigger the signal engine with a new signal record.
         Stores the signal record in cache and returns it.
         """
-        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker_id)
+        logger.info(
+            f"Triggering signal for {self.instance.worker.app} {self.instance.worker.name}"
+        )
+        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker.id)
         signal_record = SignalRecord(
             app_name=self.instance.worker.app,
-            worker_id=str(self.instance.worker_id),
+            worker_id=str(self.instance.worker.id),
+            seed_name=self.instance.worker.name,
             triggered_by_payout_id=str(
                 self.instance.id
             ),  # Use the current instance ID as the trigger payout ID
@@ -232,14 +250,32 @@ class SignalEngineService:
 
     def _send_notification(self, signal_record: dict) -> None:
         """
-        Send a notification about the triggered signal.
-        This is a placeholder for the actual implementation.
+        Send a push notification about the triggered signal.
         """
-        # Here you would typically send a notification to the user or system
-        # about the triggered signal, e.g., via email, push notification, etc.
-        pass
+        """Build and dispatch a push notification for a threshold crossing."""
+        app = self.instance.worker.app
+        room_name = get_room_name(app=app, worker_name=self.instance.worker.name)
+        title = f"{app} Signal Alert"
+        message = f"{app} {room_name} has a strong over 20x chance. Tap to play!"
 
-    def process_latest_payout(self, instance: Multiplier):
+        subscribers = get_app_subscribers(app)
+        if not subscribers:
+            logger.info(f"No subscribers found for {app}.")
+            return
+
+        try:
+            logger.info(f"Found {len(subscribers)} subscribers for {app}.")
+            # schedule background task
+            send_push_task.delay(
+                notification_type=NotificationChannel.PUSH.value,
+                title=title,
+                message=message,
+                user_ids=list(subscribers),
+            )
+        except Exception as e:
+            logger.error(f"Failed to enqueue push for {app} -> {e}")
+
+    def process_latest_payout(self, instance: Multiplier) -> dict | None:
         self.instance = instance
 
         payout = float(self.instance.crash)

@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from commons.pagination import StandardPageNumberPagination
 from commons.permissions import IsStaffOrSelfPermission, IsStaffPermission
-from observers.utils import SIGNAL_NOTIFICATION_TRIGGERS, get_app_threshold_subscribers
+from observers.utils import SIGNAL_NOTIFICATION_TRIGGERS, get_app_subscribers
 from users.models import SignalSetting, User
 from users.serializers import (
     AppParamSerializer,
@@ -120,6 +120,6 @@ class AppSubscribersView(APIView):
 
         data = {}
         for threshold in SIGNAL_NOTIFICATION_TRIGGERS:
-            subscribers = list(get_app_threshold_subscribers(app, threshold))
+            subscribers = get_app_subscribers(app, threshold)
             data[threshold] = subscribers
         return Response({"app": app, "thresholds": data})

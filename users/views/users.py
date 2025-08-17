@@ -1,4 +1,5 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
@@ -57,6 +58,17 @@ class UserRetrieveUpdateView(RetrieveUpdateAPIView):
         return UserRetrieveUpdateSerializer
 
 
+@extend_schema(
+    request={
+        "application/json": {
+            "example": {
+                "preference": {
+                    "BETIKA": {"subscribed": True},
+                }
+            }
+        }
+    }
+)
 class SignalSettingViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,

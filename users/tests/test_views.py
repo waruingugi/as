@@ -433,7 +433,7 @@ class SignalSettingViewSetTests(UserBaseAPITestCase):
         self.assertTrue(response2.data["preference"][self.APP0]["subscribed"])
 
 
-class AppSubscribersViewTests(UserBaseAPITestCase):
+class SubscribersViewTests(UserBaseAPITestCase):
     def setUp(self) -> None:
         self.staff_user = self.create_staff_user()
         self.user1 = User.objects.create_user(

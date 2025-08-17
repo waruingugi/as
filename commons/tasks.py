@@ -1,11 +1,10 @@
 from celery import shared_task
 
 from commons.constants import (
-    PUSH_PROVIDERS,
     SMSProvider,
 )
 from commons.logger import logger
-from commons.utils import UserSignalSettingsCacheManager
+from commons.utils import UserSignalSettingsCacheManager, send_push_notification
 from notifications.base import Notification
 from notifications.constants import NotificationType
 
@@ -25,20 +24,13 @@ def send_sms_task(
 @shared_task  # type: ignore
 def send_push_task(
     *, notification_type: str, title: str, message: str, user_ids: list[str]
-) -> bool:
-    logger.info("Sending push notification in background...")
-    for provider in PUSH_PROVIDERS:
-        if provider.send_push(
-            notification_type=notification_type,
-            title=title,
-            message=message,
-            user_ids=user_ids,
-        ):
-            return True
-
-    # Raise error if all providers failed here
-    logger.error("Failed to send push notification in the background")
-    return False
+) -> None:
+    send_push_notification(
+        notification_type=notification_type,
+        title=title,
+        message=message,
+        user_ids=user_ids,
+    )
 
 
 @shared_task

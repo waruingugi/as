@@ -51,6 +51,10 @@ class UserIsActiveMiddleware(MiddlewareMixin):
 class RequestResponseLoggerMiddleware(MiddlewareMixin):
     """Log incoming requests and outgoing responses."""
 
+    EXEMPT_PATHS = [
+        "/api/multipliers/create/",
+    ]
+
     def process_request(self, request):
         exclude_keys = ["Authorization", "Cookie"]
         sensitive_keys_data = ["refresh", "access", "password"]
@@ -82,9 +86,11 @@ class RequestResponseLoggerMiddleware(MiddlewareMixin):
             or request.META.get("REMOTE_ADDR"),
             "data": data,
         }
-        logger.info(
-            f"Request: {local.request_id} - {log_data['ip_address']}: {log_data}"
-        )
+
+        if request.get_full_path() not in self.EXEMPT_PATHS:
+            logger.info(
+                f"Request: {local.request_id} - {log_data['ip_address']}: {log_data}"
+            )
 
     def process_response(self, request, response):
         response_log_data = dict(
@@ -93,6 +99,8 @@ class RequestResponseLoggerMiddleware(MiddlewareMixin):
                 str(request.user.id) if request.user.is_authenticated else "Anonymous"
             ),
         )
-        logger.info(f"Response: {local.request_id}: {response_log_data}")
+
+        if request.get_full_path() not in self.EXEMPT_PATHS:
+            logger.info(f"Response: {local.request_id}: {response_log_data}")
 
         return response

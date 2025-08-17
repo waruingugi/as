@@ -122,8 +122,9 @@ class SignalSettingViewSet(
         return Response(serializer.data, status=code)
 
 
-class AppSubscribersView(APIView):
+class SubscribersView(APIView):
     permission_classes = [IsStaffPermission]
+    serializer_class = AppParamSerializer
 
     def get(self, request, app):
         # Validate app param using AppParamSerializer

@@ -1,29 +1,263 @@
+from __future__ import annotations
+
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timedelta
+from datetime import timedelta
+from typing import Any, Dict, Optional
 
 from django.core.cache import cache
 
+from analytics.constants import CrashesToMonitor
+from analytics.services import Probability
 from commons.constants import CacheKeys
 from commons.logger import logger
-from commons.tasks import send_push_task
-from commons.utils import get_room_name
+from commons.utils import get_room_name, send_push_notification
 from notifications.constants import NotificationChannel
 from observers.models import Multiplier
 from observers.utils import get_app_subscribers
 
+# @dataclass
+# class SignalRecord:
+#     app_name: str
+#     worker_id: str
+#     seed_name: str
+#     triggered_by_payout_id: Optional[str] = field(default=None)
+#     triggered_at: Optional[str] = field(default=None)
+#     remaining_rounds: int = field(default=0)
+#     profit_window_rounds: int = field(default=15)
+#     triggered_recently: bool = field(default=False)
+#
+#
+# @dataclass(frozen=True)
+# class SignalConfig:
+#     payout_to_monitor: float = 20.00
+#     min_payouts_in_cluster: int = 7
+#     max_rounds: int = 4
+#     huge_payout: float = 80.00
+#     burst_rounds: int = 20
+#     min_payouts_in_bust: int = 3
+#     window_rounds: int = 15
+#     redis_ttl_seconds: int = 2 * 60 * 60  # 2 hours
+
+
+# class SignalEngineService:
+#     """
+#     Stateless service:
+#     - No per-call data stored on `self`.
+#     - Safe to reuse a single instance across threads/requests.
+#     """
+#
+#     SIGNAL_RECORD_KEY = CacheKeys.SIGNAL_RECORD  # e.g. "signal_record:{0}"
+#
+#     def __init__(self, signal_config: Optional[SignalConfig] = None):
+#         self.signal_config = signal_config or SignalConfig()
+#
+#     # ---------- helpers (all accept `instance`) ----------
+#
+#     def _cache_key(self, instance: Multiplier) -> str:
+#         return self.SIGNAL_RECORD_KEY.format(instance.worker.id)
+#
+#     def _generate_default_record_values(self, instance: Multiplier) -> Dict[str, Any]:
+#         record = SignalRecord(
+#             app_name=instance.worker.app,
+#             worker_id=str(instance.worker.id),
+#             seed_name=instance.worker.name,
+#             triggered_by_payout_id=None,
+#             triggered_at=None,
+#             remaining_rounds=self.signal_config.window_rounds,
+#             profit_window_rounds=self.signal_config.window_rounds,
+#             triggered_recently=False,
+#         )
+#         return asdict(record)
+#
+#     def _has_cluster(self, instance: Multiplier) -> bool:
+#         """Check if there were >=7 over 20x payouts in the past 60 minutes."""
+#         time_now = instance.created_at
+#         one_hour_ago = time_now - timedelta(hours=1)
+#
+#         high_payouts_count = (
+#             Multiplier.objects.filter(
+#                 worker=instance.worker,
+#                 created_at__lte=time_now,
+#                 created_at__gte=one_hour_ago,
+#                 crash__gte=self.signal_config.payout_to_monitor,
+#             ).count()
+#         )
+#         return high_payouts_count >= self.signal_config.min_payouts_in_cluster
+#
+#     def _has_short_streak(self, instance: Multiplier) -> bool:
+#         """
+#         Check if there was a large payout in the last 20 rounds or any over 20x payout happened very recently.
+#         """
+#         last_high20 = (
+#             Multiplier.objects.filter(
+#                 worker=instance.worker,
+#                 created_at__lte=instance.created_at,  # (fixed typo: __lte)
+#                 crash__gte=self.signal_config.payout_to_monitor,
+#             )
+#             .order_by("-created_at")
+#             .first()
+#         )
+#         if not last_high20:
+#             return False
+#
+#         rounds_since_last_high20 = Multiplier.objects.filter(
+#             worker=instance.worker,
+#             created_at__gt=last_high20.created_at,
+#             created_at__lte=instance.created_at,
+#         ).count()
+#
+#         is_recent = rounds_since_last_high20 <= self.signal_config.max_rounds
+#         is_huge_payout = float(last_high20.crash) >= self.signal_config.huge_payout  # (fixed)
+#
+#         return is_recent or is_huge_payout
+#
+#     def _has_short_burst(self, instance: Multiplier) -> bool:
+#         """In the last 20 rounds, at least 3 payouts ≥ 20×."""
+#         last_20 = (
+#             Multiplier.objects.filter(
+#                 worker=instance.worker, created_at__lte=instance.created_at
+#             )
+#             .order_by("-created_at")[: self.signal_config.burst_rounds]
+#         )
+#         high20_count = sum(
+#             float(p.crash) >= self.signal_config.payout_to_monitor for p in last_20
+#         )
+#         return high20_count >= self.signal_config.min_payouts_in_bust
+#
+#     def _has_been_triggered_recently(self, instance: Multiplier) -> bool:
+#         data = cache.get(self._cache_key(instance)) or {}
+#         return bool(data.get("triggered_recently", False))
+#
+#     def _should_send_signal(self, instance: Multiplier) -> bool:
+#         return (
+#             self._has_cluster(instance)
+#             and self._has_short_streak(instance)
+#             and self._has_short_burst(instance)
+#             and not self._has_been_triggered_recently(instance)
+#         )
+#
+#     def _update_signal(self, instance: Multiplier) -> Dict[str, Any] | None:
+#         """
+#         Decrement remaining rounds since the trigger payout.
+#         If there's no trigger stored yet or was not triggered recently, do nothing.
+#         """
+#         logger.info(
+#             "Updating signal record for worker: %s %s",
+#             instance.worker.app,
+#             instance.worker.name,
+#         )
+#         cache_key = self._cache_key(instance)
+#         signal_record_data = cache.get(cache_key) or self._generate_default_record_values(instance)
+#
+#         triggered_recently = signal_record_data.get("triggered_recently", False)
+#
+#         if triggered_recently:
+#             trigger_id = signal_record_data.get("triggered_by_payout_id")
+#             worker_id = signal_record_data.get("worker_id")
+#
+#             trigger_payout = Multiplier.objects.get(id=trigger_id)
+#             rounds_passed = Multiplier.objects.filter(
+#                 worker__id=worker_id,
+#                 created_at__gt=trigger_payout.created_at,
+#                 created_at__lte=instance.created_at,
+#             ).count()
+#
+#             remaining = max(0, self.signal_config.window_rounds - rounds_passed)
+#             signal_record_data["remaining_rounds"] = remaining
+#
+#             updated_signal_record = SignalRecord(**signal_record_data)
+#             cache.set(cache_key, asdict(updated_signal_record), self.signal_config.redis_ttl_seconds)
+#             return asdict(updated_signal_record)
+#
+#         return signal_record_data
+#
+#     def _reset_signal(self, instance: Multiplier) -> Dict[str, Any]:
+#         logger.info(
+#             "Resetting signal record for worker: %s %s",
+#             instance.worker.app,
+#             instance.worker.name,
+#         )
+#         cache_key = self._cache_key(instance)
+#         defaults = self._generate_default_record_values(instance)
+#
+#         current = cache.get(cache_key) or {}
+#         current.update(defaults)  # prioritize reset/default values
+#
+#         record = SignalRecord(**current)
+#         cache.set(cache_key, asdict(record), self.signal_config.redis_ttl_seconds)
+#         return asdict(record)
+#
+#     def _trigger_signal(self, instance: Multiplier) -> Dict[str, Any]:
+#         logger.info(
+#             "Triggering signal for %s %s", instance.worker.app, instance.worker.name
+#         )
+#         cache_key = self._cache_key(instance)
+#         record = SignalRecord(
+#             app_name=instance.worker.app,
+#             worker_id=str(instance.worker.id),
+#             seed_name=instance.worker.name,
+#             triggered_by_payout_id=str(instance.id),
+#             triggered_at=str(instance.created_at),
+#             remaining_rounds=self.signal_config.window_rounds,
+#             profit_window_rounds=self.signal_config.window_rounds,
+#             triggered_recently=True,
+#         )
+#         cache.set(cache_key, asdict(record), self.signal_config.redis_ttl_seconds)
+#         return asdict(record)
+#
+#     def _send_notification(self, instance: Multiplier) -> None:
+#         app = instance.worker.app
+#         room_name = get_room_name(app=app, worker_name=instance.worker.name)
+#         title = f"{app} Signal Alert"
+#         message = f"{app} {room_name} has a strong over 20x chance. Tap to play!"
+#
+#         subscribers = get_app_subscribers(app)
+#         if not subscribers:
+#             logger.info("No subscribers found for %s.", app)
+#             return
+#
+#         try:
+#             logger.info("Found %d subscribers for %s.", len(subscribers), app)
+#             send_push_task.delay(
+#                 notification_type=NotificationChannel.PUSH.value,
+#                 title=title,
+#                 message=message,
+#                 user_ids=list(subscribers),
+#             )
+#         except Exception as e:
+#             logger.error("Failed to enqueue push for %s -> %s", app, e)
+#
+#     # ---------- public API ----------
+#
+#     def process_latest_payout(self, instance: Multiplier) -> Dict[str, Any] | None:
+#         payout = float(instance.crash)
+#         threshold = self.signal_config.payout_to_monitor
+#
+#         if payout >= threshold:
+#             # Large payout: reset the engine window
+#             return self._reset_signal(instance)
+#
+#         if self._should_send_signal(instance):
+#             signal_record = self._trigger_signal(instance)
+#             self._send_notification(instance)
+#             return signal_record
+#
+#         return self._update_signal(instance)
+#
+#     def __call__(self, instance: Multiplier) -> Dict[str, Any] | None:
+#         return self.process_latest_payout(instance)
+#
+#
+# signal_engine_service = SignalEngineService()
+
 
 @dataclass
 class SignalRecord:
-    """
-    A class to represent a signal record.
-    This is a placeholder for the actual implementation.
-    """
-
     app_name: str
     worker_id: str
     seed_name: str
-    triggered_by_payout_id: str | None = field(default=None)
-    triggered_at: datetime | None = field(default=None)
+    triggered_by_payout_id: Optional[str] = field(default=None)
+    triggered_at: Optional[str] = field(default=None)
     remaining_rounds: int = field(default=0)
     profit_window_rounds: int = field(default=15)
     triggered_recently: bool = field(default=False)
@@ -31,263 +265,205 @@ class SignalRecord:
 
 @dataclass(frozen=True)
 class SignalConfig:
-    payout_to_monitor: float = (
-        20.00  # The payout we're interesed in monitoring, e.g., 20×
-    )
-    min_payouts_in_cluster: int = (
-        7  # minimum payouts in the last 60 minutes with multiplier ≥ 20×
-    )
-    max_rounds: int = 4  # Max rounds since last ≥20×
-    huge_payout: float = 80.00  # Size of payout to be considered "huge"
-    burst_rounds: int = 20  # Lookback 20 rounds for burst
-    min_payouts_in_bust: int = 3  # Number of ≥20× payout needed in last burst rounds
-    window_rounds: int = 15  # rounds to watch after we send a signal
-
-    # Redis fallback TTL (seconds) to auto-clean the cooldown key in case
-    # a process dies. 2 hours is plenty for a 15-round window in practice.
+    payout_to_monitor: float = 20.00
+    window_rounds: int = 15
     redis_ttl_seconds: int = 2 * 60 * 60
 
 
-class SignalEngineService:
+class SignalServiceEngine:
     """
-    A service class that provides access to the signal engine.
+    Stateless service to handle signal processing for Multiplier instances.
+    - No per-call data stored on `self`.
+    - Safe to reuse a single instance across threads/requests.
     """
 
     SIGNAL_RECORD_KEY = CacheKeys.SIGNAL_RECORD
 
-    def __init__(self):
-        self.instance = None
-        self.signal_config = SignalConfig()
+    def __init__(self, signal_config: Optional[SignalConfig] = None):
+        self.signal_config = signal_config or SignalConfig()
 
-    def _generate_default_record_values(self) -> dict:
+    def _cache_key(self, instance: Multiplier) -> str:
         """
-        Generate a new signal record with default values.
-        This is used to reset the signal engine.
+        Generate a cache key for the signal record based on the worker ID.
         """
-        signal_record = SignalRecord(
-            app_name=self.instance.worker.app,
-            worker_id=str(self.instance.worker.id),
-            seed_name=self.instance.worker.name,
+        return self.SIGNAL_RECORD_KEY.format(instance.worker.id)
+
+    def _generate_default_record_values(self, instance: Multiplier) -> Dict[str, Any]:
+        """
+        Generate default values for a SignalRecord based on the Multiplier instance.
+        """
+        record = SignalRecord(
+            app_name=instance.worker.app,
+            worker_id=str(instance.worker.id),
+            seed_name=instance.worker.name,
             triggered_by_payout_id=None,
             triggered_at=None,
             remaining_rounds=self.signal_config.window_rounds,
             profit_window_rounds=self.signal_config.window_rounds,
             triggered_recently=False,
         )
-        return asdict(signal_record)
+        return asdict(record)
 
-    def _has_cluster(self) -> bool:
+    def _has_low_streak(self, instance: Multiplier) -> bool:
         """
-        Check if in the past 60 minutes, there were at least 7 payouts with a multiplier of ≥ 20x.
-        This indicates a busy hour with significant activity.
-        It helps identify clusters of high payouts, suggesting a favorable environment for big wins.
+        Check if there were less than x over 20x payouts in the last 60 minutes.
         """
-
-        time_now = self.instance.created_at
+        time_now = instance.created_at
         one_hour_ago = time_now - timedelta(hours=1)
-        # Fetch payouts in the last 60 minutes with multiplier ≥ 20
+        max_high_payouts_count = 7
+
         high_payouts_count = Multiplier.objects.filter(
-            worker=self.instance.worker,
-            created_at__lte=self.instance.created_at,
+            worker=instance.worker,
+            created_at__lte=time_now,
             created_at__gte=one_hour_ago,
             crash__gte=self.signal_config.payout_to_monitor,
         ).count()
+        return high_payouts_count <= max_high_payouts_count
 
-        return high_payouts_count >= self.signal_config.min_payouts_in_cluster
-
-    def _has_short_streak(self) -> bool:
+    def _probability_is_high(self, instance: Multiplier) -> bool:
         """
-        Check if either the last ≥20× was very recent (≤ 4 rounds ago) or it was huge (≥ 80×).
+        Check if the probability of a payout is >= 80%.
         """
-        # Step 1: Find the last ≥20× payout
-        last_high20 = (
-            Multiplier.objects.filter(
-                worker=self.instance.worker,
-                created_at_lte=self.instance.created_at,
-                crash__gte=self.signal_config.payout_to_monitor,
-            )
-            .order_by("-created_at")
-            .first()
+        high_probability: float = 80.00
+        probability = Probability.calculate_probability(
+            worker_id=str(instance.worker.id), crash=CrashesToMonitor.OVER_20X.value
         )
+        return probability >= high_probability
 
-        if not last_high20:
-            return False
+    def _has_been_triggered_recently(self, instance: Multiplier) -> bool:
+        data = cache.get(self._cache_key(instance)) or {}
+        return bool(data.get("triggered_recently", False))
 
-        # Step 2: Count the number of rounds between last_high20 and current payout
-        rounds_since_last_high20 = Multiplier.objects.filter(
-            worker=self.instance.worker,
-            created_at__gt=last_high20.created_at,
-            created_at__lte=self.instance.created_at,
-        ).count()
-
-        # Step 3: Check if it was recent
-        is_recent = rounds_since_last_high20 <= self.signal_config.max_rounds
-
-        # Step 4: last_high20_multiplier >= 80
-        is_huge_payout = float(last_high20) >= self.signal_config.huge_payout
-
-        return is_recent or is_huge_payout
-
-    def _has_short_burst(self) -> bool:
-        """
-        Check if in the last 20 rounds, there were at least 3 payouts ≥ 20×.
-        """
-        # Get the last 20 payouts including the current one
-        last_20 = Multiplier.objects.filter(
-            worker=self.instance.worker, created_at__lte=self.instance.created_at
-        ).order_by(  # Includes the current round but locked for real time calculations
-            "-created_at"
-        )[: self.signal_config.burst_rounds]
-
-        # Count how many have crash ≥ 20
-        high20_count = sum(
-            float(payout.crash) >= self.signal_config.payout_to_monitor
-            for payout in last_20
-        )
-
-        return high20_count >= self.signal_config.min_payouts_in_bust
-
-    def _has_been_triggered_recently(self) -> bool:
-        """
-        Check if the signal has been triggered recently.
-        This prevents sending multiple signals in a short time frame.
-        """
-        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker.id)
-        signal_record_data = cache.get(cache_key)
-        return signal_record_data.get("triggered_recently", False)
-
-    def _should_send_signal(self) -> bool:
-        """
-        Run all checks to determine if the signal engine should be active.
-        """
-        return (
-            self._has_cluster()
-            and self._has_short_streak()
-            and self._has_short_burst()
-            and not self._has_been_triggered_recently()
-        )
-
-    def _update_signal(self) -> dict | None:
-        """
-        Update the signal engine with a new signal record.
-        Decrements the remaining_rounds for the signal record in the cache by 1.
-        """
-        logger.info(
-            f"Updating signal record for worker: {self.instance.worker.app} {self.instance.worker.name}"
-        )
-        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker.id)
-        signal_record_data = (
-            cache.get(cache_key) or self._generate_default_record_values()
-        )
-
-        # Calculate remaining_rounds based on rounds since trigger payout
-        trigger_id = signal_record_data.get("triggered_by_payout_id")
-        worker_id = signal_record_data.get("worker_id")
-
-        trigger_payout = Multiplier.objects.get(id=trigger_id)
-        rounds_passed = Multiplier.objects.filter(  # Count rounds since trigger payout
-            worker__id=worker_id,
-            created_at__gt=trigger_payout.created_at,
-            created_at__lte=self.instance.created_at,
-        ).count()
-        remaining = max(  # Calculate remaining rounds
-            0, self.signal_config.window_rounds - rounds_passed
-        )
-
-        signal_record_data["remaining_rounds"] = remaining
-        updated_signal_record = SignalRecord(**signal_record_data)
-        cache.set(
-            cache_key,
-            asdict(updated_signal_record),
-            self.signal_config.redis_ttl_seconds,
-        )
-        return asdict(updated_signal_record)
-
-    def _reset_signal(self) -> dict:
-        """Update the status of the signal record"""
-        logger.info(
-            f"Resetting signal record for worker: {self.instance.worker.app} {self.instance.worker.name}"
-        )
-        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker.id)
-
-        default_values = self._generate_default_record_values()
-
-        signal_record_data = cache.get(cache_key) or {}
-        # Merge existing data with defaults, prioritizing reset values
-        signal_record_data.update(default_values)
-        signal_record = SignalRecord(**signal_record_data)
-
-        cache.set(
-            cache_key, asdict(signal_record), self.signal_config.redis_ttl_seconds
-        )
-        return asdict(signal_record)
-
-    def _trigger_signal(self) -> dict:
-        """
-        Trigger the signal engine with a new signal record.
-        Stores the signal record in cache and returns it.
-        """
-        logger.info(
-            f"Triggering signal for {self.instance.worker.app} {self.instance.worker.name}"
-        )
-        cache_key = self.SIGNAL_RECORD_KEY.format(self.instance.worker.id)
-        signal_record = SignalRecord(
-            app_name=self.instance.worker.app,
-            worker_id=str(self.instance.worker.id),
-            seed_name=self.instance.worker.name,
-            triggered_by_payout_id=str(
-                self.instance.id
-            ),  # Use the current instance ID as the trigger payout ID
-            triggered_at=self.instance.created_at.isoformat(),
-            remaining_rounds=self.signal_config.window_rounds,
-            profit_window_rounds=self.signal_config.window_rounds,
-            triggered_recently=True,
-        )
-        cache.set(
-            cache_key, asdict(signal_record), self.signal_config.redis_ttl_seconds
-        )
-        return asdict(signal_record)
-
-    def _send_notification(self, signal_record: dict) -> None:
-        """
-        Send a push notification about the triggered signal.
-        """
-        """Build and dispatch a push notification for a threshold crossing."""
-        app = self.instance.worker.app
-        room_name = get_room_name(app=app, worker_name=self.instance.worker.name)
+    def _send_notification(self, instance: Multiplier) -> None:
+        app = instance.worker.app
+        room_name = get_room_name(app=app, worker_name=instance.worker.name)
         title = f"{app} Signal Alert"
         message = f"{app} {room_name} has a strong over 20x chance. Tap to play!"
 
         subscribers = get_app_subscribers(app)
         if not subscribers:
-            logger.info(f"No subscribers found for {app}.")
+            logger.info("No subscribers found for %s.", app)
             return
 
         try:
-            logger.info(f"Found {len(subscribers)} subscribers for {app}.")
-            # schedule background task
-            send_push_task.delay(
+            logger.info("Found %d subscribers for %s.", len(subscribers), app)
+            send_push_notification(
                 notification_type=NotificationChannel.PUSH.value,
                 title=title,
                 message=message,
                 user_ids=list(subscribers),
             )
         except Exception as e:
-            logger.error(f"Failed to enqueue push for {app} -> {e}")
+            logger.error("Failed to enqueue push for %s -> %s", app, e)
 
-    def process_latest_payout(self, instance: Multiplier) -> dict | None:
-        self.instance = instance
+    def _update_signal(self, instance: Multiplier) -> Dict[str, Any] | None:
+        """
+        Decrement remaining rounds since the trigger payout.
+        If there's no trigger stored yet or was not triggered recently, do nothing.
+        """
+        logger.info(
+            "Updating signal record for worker: %s %s",
+            instance.worker.app,
+            instance.worker.name,
+        )
+        cache_key = self._cache_key(instance)
+        signal_record_data = cache.get(
+            cache_key
+        ) or self._generate_default_record_values(instance)
 
-        payout = float(self.instance.crash)
+        triggered_recently = signal_record_data.get("triggered_recently", False)
+
+        if triggered_recently:
+            trigger_id = signal_record_data.get("triggered_by_payout_id")
+            worker_id = signal_record_data.get("worker_id")
+
+            trigger_payout = Multiplier.objects.get(id=trigger_id)
+            rounds_passed = Multiplier.objects.filter(
+                worker__id=worker_id,
+                created_at__gt=trigger_payout.created_at,
+                created_at__lte=instance.created_at,
+            ).count()
+
+            remaining = max(0, self.signal_config.window_rounds - rounds_passed)
+            signal_record_data["remaining_rounds"] = remaining
+
+            updated_signal_record = SignalRecord(**signal_record_data)
+            cache.set(
+                cache_key,
+                asdict(updated_signal_record),
+                self.signal_config.redis_ttl_seconds,
+            )
+            return asdict(updated_signal_record)
+
+        return signal_record_data
+
+    def _trigger_signal(self, instance: Multiplier) -> Dict[str, Any]:
+        """Create a record for a triggered signal"""
+        logger.info(
+            "Triggering signal for %s %s", instance.worker.app, instance.worker.name
+        )
+        cache_key = self._cache_key(instance)
+        record = SignalRecord(
+            app_name=instance.worker.app,
+            worker_id=str(instance.worker.id),
+            seed_name=instance.worker.name,
+            triggered_by_payout_id=str(instance.id),
+            triggered_at=str(instance.created_at),
+            remaining_rounds=self.signal_config.window_rounds,
+            profit_window_rounds=self.signal_config.window_rounds,
+            triggered_recently=True,
+        )
+        cache.set(cache_key, asdict(record), self.signal_config.redis_ttl_seconds)
+        return asdict(record)
+
+    def _should_send_signal(self, instance: Multiplier) -> bool:
+        """
+        Determine if a signal should be sent based on payout conditions.
+        """
+        return (
+            self._has_low_streak(instance)
+            and self._probability_is_high(instance)
+            and not self._has_been_triggered_recently(instance)
+        )
+
+    def _reset_signal(self, instance: Multiplier) -> Dict[str, Any]:
+        """Reset the signal record for a worker instance."""
+        logger.info(
+            "Resetting signal record for worker: %s %s",
+            instance.worker.app,
+            instance.worker.name,
+        )
+        cache_key = self._cache_key(instance)
+        defaults = self._generate_default_record_values(instance)
+
+        current = cache.get(cache_key) or {}
+        current.update(defaults)  # prioritize reset/default values
+
+        record = SignalRecord(**current)
+        cache.set(cache_key, asdict(record), self.signal_config.redis_ttl_seconds)
+        return asdict(record)
+
+    def process_latest_payout(self, instance: Multiplier) -> Dict[str, Any] | None:
+        """
+        Process the Multiplier instance and return a SignalRecord if applicable.
+        """
+        payout = float(instance.crash)
         threshold = self.signal_config.payout_to_monitor
-
         if payout >= threshold:
-            # Reset the signal engine if the payout is greater than or equal to the threshold
-            return self._reset_signal()
+            return self._reset_signal(instance)
 
-        elif self._should_send_signal():
-            signal_record = self._trigger_signal()
-            self._send_notification(signal_record)
+        elif self._should_send_signal(instance):
+            signal_record = self._trigger_signal(instance)
+            self._send_notification(instance)
             return signal_record
-        else:
-            return self._update_signal()
+
+        return self._update_signal(instance)
+
+    def __call__(self, instance: Multiplier) -> Dict[str, Any] | None:
+        """
+        Make the service callable to process a Multiplier instance.
+        """
+        return self.process_latest_payout(instance)
+
+
+signal_service_engine = SignalServiceEngine()

@@ -6,6 +6,7 @@ from analytics.services.probability import Probability
 from commons.constants import WebSocketChannels
 from commons.logger import logger
 from observers.models import Multiplier
+from observers.services import signal_service_engine
 from observers.utils import (
     refresh_worker_crash_query,
 )
@@ -64,3 +65,14 @@ def broadcast_history_task(app_name: str) -> None:
             "type": "history.update",  # Calls `history_update` in consumer
         },
     )
+
+
+@shared_task
+def execute_signal_engine_task(multiplier_id: str) -> dict | None:
+    """
+    Execute the signal engine task for a specific Multiplier instance.
+    This function processes the latest payout and returns the signal record if applicable.
+    """
+
+    instance = Multiplier.objects.get(id=multiplier_id)
+    signal_service_engine(instance)

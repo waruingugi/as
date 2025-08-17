@@ -22,9 +22,10 @@ class TestUserSignalSettingsCacheManager(TestCase):
             "app2": {self.user_id1},
         }
 
+    @patch("commons.utils.send_push_notification")
     @patch("commons.utils.cache")
     @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
-    def test_update(self, mock_betting_app_list, mock_cache) -> None:
+    def test_update(self, mock_betting_app_list, mock_cache, _) -> None:
         mock_cache.get.return_value = self.mock_cache_data
 
         UserSignalSettingsCacheManager.update(self.mock_instance)
@@ -38,10 +39,11 @@ class TestUserSignalSettingsCacheManager(TestCase):
             timeout=None,
         )
 
+    @patch("commons.utils.send_push_notification")
     @patch("commons.utils.cache")
     @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
     def test_remove_invalid_preferences(
-        self, mock_betting_app_list, mock_cache
+        self, mock_betting_app_list, mock_cache, _
     ) -> None:
         mock_cache.get.return_value = self.mock_cache_data
         manager = UserSignalSettingsCacheManager(self.mock_instance)
@@ -51,10 +53,11 @@ class TestUserSignalSettingsCacheManager(TestCase):
         self.assertIn(self.user_id1, manager.users_signal_prefs["app1"])
         self.assertNotIn(self.user_id1, manager.users_signal_prefs["app2"])
 
+    @patch("commons.utils.send_push_notification")
     @patch("commons.utils.cache")
     @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
     def test_remove_invalid_preferences_with_different_triggers(
-        self, mock_betting_app_list, mock_cache
+        self, mock_betting_app_list, mock_cache, _
     ):
         """
         Test that submitting a new trigger for the same app removes the user from the old trigger set.
@@ -69,9 +72,10 @@ class TestUserSignalSettingsCacheManager(TestCase):
         manager._remove_invalid_preferences()
         self.assertNotIn(self.user_id1, manager.users_signal_prefs["app1"])
 
+    @patch("commons.utils.send_push_notification")
     @patch("commons.utils.cache")
     @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
-    def test_add_valid_preferences(self, mock_betting_app_list, mock_cache) -> None:
+    def test_add_valid_preferences(self, mock_betting_app_list, mock_cache, _) -> None:
         mock_cache.get.return_value = self.mock_cache_data
         manager = UserSignalSettingsCacheManager(self.mock_instance)
 
@@ -80,11 +84,12 @@ class TestUserSignalSettingsCacheManager(TestCase):
         self.assertIn(self.user_id1, manager.users_signal_prefs["app1"])
         self.assertIn(self.user_id1, manager.users_signal_prefs["app2"])
 
+    @patch("commons.utils.send_push_notification")
     @patch("commons.utils.cache")
     @patch("commons.utils.BettingApp.list", return_value=["app1", "app2", "app3"])
     @patch("commons.utils.SignalSetting.objects.select_related")
     def test_reload_cache(
-        self, mock_select_related, mock_betting_app_list, mock_cache
+        self, mock_select_related, mock_betting_app_list, mock_cache, _
     ) -> None:
         """
         Test the `_reload_cache` functionality to ensure the entire cache is refreshed for all users.

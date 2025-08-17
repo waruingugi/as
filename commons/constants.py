@@ -128,15 +128,5 @@ class WebSocketChannels:
     HISTORY = "{}_history"
 
 
-# Trigger values(probabilities) for signal notifications.
-# * SHOULD BE IN INCREASING ORDER
-# * AND MATCH VALUES IN APP NOTIFICATION SETTINGS
-SIGNAL_NOTIFICATION_TRIGGERS = (80, 85, 90, 95)
-
-# Reset all triggers at this value
-# * SHOULD BE LESS THAN THE LOWEST TRIGGER IN SIGNAL_NOTIFICATION_TRIGGERS
-RESET_SIGNALS_AT_TRIGGER = 60
-
-
 # Websocket max lifetime in seconds
 WEBSOCKET_MAX_LIFETIME_SECONDS = 60 * 15  # 15 minutes

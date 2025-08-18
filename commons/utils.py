@@ -148,7 +148,7 @@ class UserSignalSettingsCacheManager:
         message = (
             f"You'll be notified when an over 20x payout is close for {app}."
             if subscribed
-            else "You will no longer receive over 20x signals."
+            else "You will no longer receive this over 20x signals."
         )
 
         send_push_notification(
@@ -176,27 +176,6 @@ def send_push_notification(
     # Raise error if all providers failed here
     logger.error("Failed to send push notification in the background")
     return False
-
-
-#
-# def get_authorization_header_from_scope(scope) -> str:
-#     headers = dict(scope["headers"])
-#     if b"authorization" not in headers:
-#         raise AuthenticationFailed("No authorization header")
-#     return headers[b"authorization"].decode("utf-8")
-#
-# def authenticate_user_from_scope(scope):
-#     auth_header = get_authorization_header_from_scope(scope)
-#     jwt_auth = JWTAuthentication()
-#
-#     # Emulate DRF request object with META headers
-#     request = type("Request", (), {"META": {"HTTP_AUTHORIZATION": auth_header}})
-#     user_auth_tuple = jwt_auth.authenticate(request)
-#
-#     if user_auth_tuple is None:
-#         raise AuthenticationFailed("Invalid token")
-#
-#     return user_auth_tuple[0]
 
 
 class AuthJsonWebsocketConsumer(AsyncWebSocketAuthMixin, AsyncJsonWebsocketConsumer):

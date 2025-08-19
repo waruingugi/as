@@ -148,7 +148,7 @@ class UserSignalSettingsCacheManager:
         message = (
             f"You'll be notified when an over 20x payout is close for {app}."
             if subscribed
-            else "You will no longer receive this over 20x signals."
+            else "You will no longer receive its signals."
         )
 
         send_push_notification(

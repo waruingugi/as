@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from commons.constants import SIGNAL_NOTIFICATION_TRIGGERS, BettingApp
+from commons.constants import BettingApp
 from commons.errors import ErrorCodes
 from commons.serializers import UserPhoneNumberField
 from users.constants import TOTP_LENGTH
@@ -248,45 +248,36 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
 
 class SignalSettingSerializer(serializers.ModelSerializer):
+    preference = serializers.DictField(
+        child=serializers.DictField(
+            child=serializers.BooleanField(), allow_empty=False
+        ),
+        required=True,
+    )
+
     class Meta:
         model = SignalSetting
         fields = "__all__"
         read_only_fields = ("created_at", "updated_at", "user")
 
-    def _validate_and_normalize_trigger(self, app, cfg):
-        """
-        Convert trigger to int and validate against SIGNAL_NOTIFICATION_TRIGGERS.
-        """
-        trigger = cfg.get("trigger")
-        subscribed = cfg.get("subscribed") is True
-
-        # Trigger must be specified if subscribed
-        if subscribed and trigger is None:
-            raise serializers.ValidationError(
-                {app: {"trigger": "Trigger must be specified."}}
-            )
-
-        if trigger is not None:
-            try:
-                trigger = int(trigger)  # Ensure trigger is an integer
-            except (ValueError, TypeError):
+    def validate_preference(self, value):
+        valid_apps = set(BettingApp.list())
+        for app, cfg in value.items():
+            if app not in valid_apps:
+                raise serializers.ValidationError(f"Invalid app: {app}")
+            if not isinstance(cfg, dict) or set(cfg.keys()) != {"subscribed"}:
                 raise serializers.ValidationError(
-                    {app: {"trigger": f"Trigger `{trigger}` is not a valid integer."}}
+                    f"Preference for {app} must only contain 'subscribed' key"
                 )
-
-            # Validate trigger against allowed values
-            if trigger not in SIGNAL_NOTIFICATION_TRIGGERS:
+            if not isinstance(cfg.get("subscribed"), bool):
                 raise serializers.ValidationError(
-                    {app: {"trigger": f"Trigger `{trigger}` is not allowed."}}
+                    f"'subscribed' for {app} must be a boolean"
                 )
-            cfg["trigger"] = trigger
-
-        return cfg
+        return value
 
     def _normalize_preferences(self, existing_prefs, incoming_prefs) -> dict:
         """
-        Method ensures that only one app can have its `subscribed` field set to True.
-        Also normalizes and validates trigger values.
+        Ensures only one app can have its `subscribed` field set to True.
         """
         valid_apps = set(BettingApp.list())
         incoming_prefs = {
@@ -294,30 +285,31 @@ class SignalSettingSerializer(serializers.ModelSerializer):
         }
 
         normalized_preferences = {
-            app: existing_prefs.get(app, {})
+            app: existing_prefs.get(app, {}).copy()
             for app in set(existing_prefs) | set(incoming_prefs)
         }
-        normalized_preferences.update(incoming_prefs)
+        for app, cfg in incoming_prefs.items():
+            normalized_preferences[app].update(cfg)
 
-        # Validate and normalize triggers for all apps
-        for app, cfg in normalized_preferences.items():
-            normalized_preferences[app] = self._validate_and_normalize_trigger(app, cfg)
-
-        # Ensure only one app (the newest set to subscribed) can be subscribed
+        # Only one app can be subscribed
         newly_on = [app for app, cfg in incoming_prefs.items() if cfg.get("subscribed")]
 
         if newly_on:
             keep = newly_on[-1]
             for app in normalized_preferences:
                 normalized_preferences[app]["subscribed"] = app == keep
+        else:
+            # If no new subscription, keep existing state
+            for app, cfg in normalized_preferences.items():
+                if "subscribed" not in cfg:
+                    cfg["subscribed"] = False
 
         return normalized_preferences
 
     def create(self, validated_data):
         prefs = validated_data.get("preference", {}) or {}
-        # merge against a “blank” existing prefs
         validated_data["preference"] = self._normalize_preferences(
-            existing_prefs=default_signal_preference(),  # empty stub
+            existing_prefs=default_signal_preference(),
             incoming_prefs=prefs,
         )
         return super().create(validated_data)

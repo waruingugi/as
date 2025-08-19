@@ -1,8 +1,8 @@
 from django.urls import path
 
 from users.views.users import (
-    AppSubscribersView,
     SignalSettingViewSet,
+    SubscribersView,
     UserCreateView,
     UserListView,
     UserRetrieveUpdateView,
@@ -24,8 +24,8 @@ urlpatterns = [
     ),
     # App Subscribers
     path(
-        "app-subscribers/<str:app>/",
-        AppSubscribersView.as_view(),
+        "subscribers/<str:app>/",
+        SubscribersView.as_view(),
         name="app-subscribers",
     ),
     # User Management

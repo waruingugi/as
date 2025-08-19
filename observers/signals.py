@@ -4,6 +4,7 @@ from observers.models import Multiplier, post_bulk_create
 from observers.tasks import (
     broadcast_history_task,
     broadcast_probability_task,
+    execute_signal_engine_task,
     trigger_computations_task,
 )
 
@@ -27,6 +28,9 @@ def handle_bulk_created(sender, instances, **kwargs) -> None:
     )  # Assuming the last instance's worker app is the target
 
     broadcast_history_task.delay(instances[-1].worker.app)
+
+    # Execute the signal engine task
+    execute_signal_engine_task.delay(instances[-1].id)
 
     # # Delegate to the analytics app
     # Probability.recompute_time_since_last_crash(instances)

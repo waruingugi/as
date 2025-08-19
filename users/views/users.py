@@ -1,4 +1,5 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
@@ -6,7 +7,7 @@ from rest_framework.views import APIView
 
 from commons.pagination import StandardPageNumberPagination
 from commons.permissions import IsStaffOrSelfPermission, IsStaffPermission
-from observers.utils import SIGNAL_NOTIFICATION_TRIGGERS, get_app_threshold_subscribers
+from observers.utils import get_app_subscribers
 from users.models import SignalSetting, User
 from users.serializers import (
     AppParamSerializer,
@@ -57,6 +58,17 @@ class UserRetrieveUpdateView(RetrieveUpdateAPIView):
         return UserRetrieveUpdateSerializer
 
 
+@extend_schema(
+    request={
+        "application/json": {
+            "example": {
+                "preference": {
+                    "BETIKA": {"subscribed": True},
+                }
+            }
+        }
+    }
+)
 class SignalSettingViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -110,16 +122,14 @@ class SignalSettingViewSet(
         return Response(serializer.data, status=code)
 
 
-class AppSubscribersView(APIView):
+class SubscribersView(APIView):
     permission_classes = [IsStaffPermission]
+    serializer_class = AppParamSerializer
 
     def get(self, request, app):
         # Validate app param using AppParamSerializer
         serializer = AppParamSerializer(data={"app": app})
         serializer.is_valid(raise_exception=True)
 
-        data = {}
-        for threshold in SIGNAL_NOTIFICATION_TRIGGERS:
-            subscribers = list(get_app_threshold_subscribers(app, threshold))
-            data[threshold] = subscribers
-        return Response({"app": app, "thresholds": data})
+        subscribers = get_app_subscribers(app)
+        return Response({"app": app, "subscribers": subscribers})

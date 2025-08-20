@@ -20,6 +20,9 @@ DEFAULT_CACHE_DURATION: int = 300  # 5 minutes
 PAGE_SIZE: int = 50
 MULTIPLIER_PAGE_SIZE: int = 200
 
+# Websocket max lifetime in seconds
+WEBSOCKET_MAX_LIFETIME_SECONDS = 60 * 15  # 15 minutes
+
 
 class BettingApp(str, Enum):
     """Apps tracked by the API"""
@@ -128,5 +131,9 @@ class WebSocketChannels:
     HISTORY = "{}_history"
 
 
-# Websocket max lifetime in seconds
-WEBSOCKET_MAX_LIFETIME_SECONDS = 60 * 15  # 15 minutes
+class AppPageURL(str, Enum):
+    """App page URLs to open when a push notification is clicked."""
+
+    SIGNALS = "rubaniaviatorsignals://aviatorsignals.co.ke/signals"
+    SETTINGS = "rubaniaviatorsignals://aviatorsignals.co.ke/settings"
+    HOME = "rubaniaviatorsignals://aviatorsignals.co.ke/home"

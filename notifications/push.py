@@ -17,20 +17,32 @@ class OneSignalPush:
         "Content-Type": "application/json",
         "Authorization": f"Basic {settings.ONESIGNAL_API_KEY}",
     }
+    DEFAULT_APP_URL = "rubaniaviatorsignals://aviatorsignals.co.ke/home"  # Hardcoded to prevent circular imports
 
     def __init__(self) -> None:
         self.session = requests.Session()
         self.session.headers.update(self.HEADERS)
 
     def send_push(
-        self, *, notification_type: str, title: str, message: str, user_ids: list[str]
+        self,
+        *,
+        notification_type: str,
+        title: str,
+        message: str,
+        user_ids: list[str],
+        app_url: str = None,
     ) -> bool:
         """
-        Send a push notification to one or more users
-        :param notification_type: The type of notification
-        :param title: The title of the notification
-        :param message: The message to be sent
-        :param user_ids: The user ID(s) to send the notification to
+        Send a push notification to one or more users.
+        Args:
+            notification_type (str): Type of notification.
+            title (str): Notification title.
+            message (str): Message to be sent.
+            user_ids (list[str]): User IDs to send the notification to.
+            app_url (str, optional): URL to open when the notification is clicked.
+
+        Returns:
+            bool: True if the notification was sent successfully, False otherwise.
         """
         user_ids_list = [str(uid) for uid in user_ids]  # Normalize user IDs to strings
         logger.info(f"Sending PUSH notification to {user_ids_list}")
@@ -52,6 +64,7 @@ class OneSignalPush:
             "small_icon": "ic_launcher",
             "priority": 10,  # High priority
             "ttl": self.TIMEOUT,  # Time to live
+            "app_url": app_url if app_url else self.DEFAULT_APP_URL,
         }
 
         # Create notifications in bulk

@@ -23,13 +23,19 @@ def send_sms_task(
 
 @shared_task  # type: ignore
 def send_push_task(
-    *, notification_type: str, title: str, message: str, user_ids: list[str]
+    *,
+    notification_type: str,
+    title: str,
+    message: str,
+    user_ids: list[str],
+    app_url: str = None,
 ) -> None:
     send_push_notification(
         notification_type=notification_type,
         title=title,
         message=message,
         user_ids=user_ids,
+        app_url=app_url,
     )
 
 

@@ -4,11 +4,7 @@ from uuid import uuid4
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.core.cache import cache
 
-from commons.constants import (
-    PUSH_PROVIDERS,
-    BettingApp,
-    CacheKeys,
-)
+from commons.constants import PUSH_PROVIDERS, AppPageURL, BettingApp, CacheKeys
 from commons.logger import logger
 from commons.mixins import AsyncWebSocketAuthMixin
 from notifications.constants import NotificationChannel
@@ -156,11 +152,17 @@ class UserSignalSettingsCacheManager:
             title=title,
             message=message,
             user_ids=[subscriber],
+            app_url=AppPageURL.SETTINGS.value,
         )
 
 
 def send_push_notification(
-    *, notification_type: str, title: str, message: str, user_ids: list[str]
+    *,
+    notification_type: str,
+    title: str,
+    message: str,
+    user_ids: list[str],
+    app_url: str = None,
 ) -> bool:
     """Send a push notification using the configured providers."""
     logger.info("Sending push notification in background...")
@@ -170,6 +172,7 @@ def send_push_notification(
             title=title,
             message=message,
             user_ids=user_ids,
+            app_url=app_url,
         ):
             return True
 

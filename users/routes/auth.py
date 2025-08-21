@@ -3,6 +3,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from users.views.auth import (
+    OTPLoginRequestView,
+    OTPLoginVerifyView,
     OTPVerificationView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
@@ -26,6 +28,8 @@ urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
     path("verify-otp/", OTPVerificationView.as_view(), name="verify-otp"),
     path("resend-otp/", ResendOTPVerificationView.as_view(), name="resend-otp"),
+    path("otp/login/request/", OTPLoginRequestView.as_view(), name="otp-login-request"),
+    path("otp/login/verify/", OTPLoginVerifyView.as_view(), name="otp-login-verify"),
     path(
         "password-reset/",
         PasswordResetRequestView.as_view(),

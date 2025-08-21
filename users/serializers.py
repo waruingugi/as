@@ -325,3 +325,48 @@ class SignalSettingSerializer(serializers.ModelSerializer):
 
 class AppParamSerializer(serializers.Serializer):
     app = serializers.ChoiceField(choices=BettingApp.list())
+
+
+class OTPLoginRequestSerializer(serializers.Serializer):
+    """Accepts phone number only; we do NOT require the user to exist."""
+
+    phone_number = UserPhoneNumberField(required=True)
+
+
+class OTPLoginVerifySerializer(serializers.Serializer):
+    """Validates phone + OTP (reuses your OTP validation)."""
+
+    default_error_messages = {
+        "inactive_account": _(
+            "This account has been deactivated. Please contact support."
+        ),
+        "invalid_credentials": _(
+            "The phone number or OTP is incorrect. Please try again."
+        ),
+    }
+
+    phone_number = UserPhoneNumberField(required=True)
+    otp = serializers.CharField(required=True, max_length=TOTP_LENGTH)
+
+    def validate_phone_number(self, value):
+        """Validates that the phone number exists and is active."""
+        try:
+            user = User.objects.get(phone_number=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                self.error_messages["invalid_credentials"], code="invalid_credentials"
+            )
+
+        if not user.is_active:
+            raise serializers.ValidationError(
+                self.error_messages["inactive_account"], code="inactive_account"
+            )
+
+        return value
+
+    def validate(self, attrs):
+        """Validates the OTP against the provided phone number."""
+        OTPValidator.validate_otp(
+            phone_number=attrs.get("phone_number"), otp_code=attrs.get("otp")
+        )
+        return attrs

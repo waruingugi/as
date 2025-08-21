@@ -8,7 +8,7 @@ from django.core.cache import cache
 
 from analytics.constants import CrashesToMonitor
 from analytics.services import Probability
-from commons.constants import CacheKeys
+from commons.constants import AppPageURL, CacheKeys
 from commons.logger import logger
 from commons.utils import get_room_name, send_push_notification
 from notifications.constants import NotificationChannel
@@ -352,6 +352,7 @@ class SignalServiceEngine:
                 title=title,
                 message=message,
                 user_ids=list(subscribers),
+                app_url=AppPageURL.SIGNALS.value,
             )
         except Exception as e:
             logger.error("Failed to enqueue push for %s -> %s", app, e)

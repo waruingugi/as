@@ -37,10 +37,13 @@ class SignalRecordDict(TypedDict, total=False):
     seed_name: str
     room_name: str
     triggered_by_payout_id: Optional[str]
+    triggered_by_payout: float
     triggered_at: Optional[str]
     stopped_on_payout_id: Optional[str]
+    stopped_on_payout: float
     stopped_tracking_at: Optional[str]
     triggered_recently: bool
+    is_betting: bool
     metadata: Dict[str, Any]
 
 
@@ -52,10 +55,10 @@ class AutoBetStrategy:
 
     def start(self, bankroll: Optional[float] = None) -> BetMetaData:
         """Initialize betting strategy metadata and start betting."""
-        bankroll = bankroll or (
-            self.stake * self.max_rounds
-        )  # NOTE: 0.0 will be falsey
-        if bankroll < (self.stake * self.max_rounds):
+        bankroll = bankroll or (self.stake * self.max_rounds)  # NOTE: 0.0 will be false
+
+        if bankroll < (self.stake * self.max_rounds):  # A simple sanity check
+            logger.error(f"Not enough bankroll to start {self.name} strategy")
             raise ValueError("Insufficient bankroll")
 
         bankroll -= self.stake
@@ -73,6 +76,7 @@ class AutoBetStrategy:
 
     @staticmethod
     def place_bet(meta: BetMetaData) -> BetMetaData:
+        """Place a bet and update metadata."""
         meta.bank_roll -= meta.stake
         meta.current_round += 1
         meta.loss += meta.stake
@@ -80,16 +84,23 @@ class AutoBetStrategy:
 
     @staticmethod
     def stop(payout: float, meta: BetMetaData) -> BetMetaData:
+        """Stop betting and update metadata."""
         if payout >= meta.cashout_at:
             net_profit = meta.stake * (meta.cashout_at - 1)
             meta.bank_roll += net_profit
+
             meta.profit += net_profit
+            logger.info(f"Bet won at {payout}x. New meta is {asdict(meta)}")
         return meta
 
     @staticmethod
-    def should_stop(meta: BetMetaData) -> bool:
+    def should_stop(meta: BetMetaData, payout: float) -> bool:
         """Should we stop betting?"""
-        return (meta.current_round >= meta.max_rounds) or (meta.bank_roll < meta.stake)
+        has_reached_max_rounds = meta.current_round >= meta.max_rounds
+        has_insufficient_bankroll = meta.bank_roll < meta.stake
+        has_won = payout >= meta.cashout_at
+
+        return has_reached_max_rounds or has_insufficient_bankroll or has_won
 
 
 # -----------------------------
@@ -99,15 +110,26 @@ class AutoBetStrategy:
 
 class SignalEvaluator:
     payout_threshold = 20.0
-    prob_threshold = 80.0
+    probability_threshold = 80.0
     max_high_payouts = 6
 
     def should_send_signal(self, instance: Multiplier) -> bool:
+        """All conditions below must be met to send a signal."""
         return (
-            self._has_low_streak(instance) or self._low_streak_is_close(instance)
-        ) and self._probability_high(instance)
+            (self._has_low_streak(instance) or self._low_streak_is_close(instance))
+            and self._probability_high(instance)
+            and not self._has_been_triggered_recently(instance)
+        )
+
+    @staticmethod
+    def _has_been_triggered_recently(instance: Multiplier) -> bool:
+        """Check if a signal has been triggered recently for the worker."""
+        cache_key = CacheKeys.SIGNAL_RECORD.format(instance.worker.id)
+        data = cache.get(cache_key) or {}
+        return bool(data.get("triggered_recently", False))
 
     def _has_low_streak(self, instance: Multiplier) -> bool:
+        """True if within the last 60 minutes, there are 6 or fewer payouts >= threshold"""
         one_hour_ago = instance.created_at - timedelta(hours=1)
         count = Multiplier.objects.filter(
             worker=instance.worker,
@@ -118,6 +140,11 @@ class SignalEvaluator:
         return count <= self.max_high_payouts
 
     def _low_streak_is_close(self, instance: Multiplier) -> bool:
+        """
+        True if within the last 60 minutes, there are 7(just a magic number) or fewer payouts >= threshold and
+        the time difference between the 6th and 7th last payouts is <= 7 minutes.
+        """
+        close_streak_minutes = 7
         one_hour_ago = instance.created_at - timedelta(hours=1)
         qs = (
             Multiplier.objects.filter(
@@ -129,20 +156,38 @@ class SignalEvaluator:
             .order_by("-created_at")
             .values_list("created_at", flat=True)
         )
-        times = list(qs[5:7])
+
+        payout_count = qs.count()
+        if payout_count > 7:  # We need at most 7 payouts to consider this condition
+            return False
+
+        times = list(qs[5:7])  # Get the 6th and 7th last payouts (if they exist)
         if len(times) < 2:
             return False
-        return (times[0] - times[1]) <= timedelta(minutes=8)
 
-    def _probability_high(self, instance: Multiplier) -> bool:
-        prob = Probability.calculate_probability(
+        return (times[0] - times[1]) <= timedelta(minutes=close_streak_minutes)
+
+    @staticmethod
+    def _get_probability(instance: Multiplier) -> float:
+        """Get the current probability of an over 20x payout for the current worker."""
+        return Probability.calculate_probability(
             worker_id=str(instance.worker.id),
             crash=CrashesToMonitor.OVER_20X.value,
         )
-        return prob >= self.prob_threshold
+
+    def _probability_high(self, instance: Multiplier) -> bool:
+        """Check if the probability of an over 20x payout is >= threshold."""
+        prob = self._get_probability(instance)
+        return prob >= self.probability_threshold
+
+    def should_reset_trigger(self, instance: Multiplier) -> bool:
+        """Check if we should reset the triggered_recently flag to False"""
+        probability = self._get_probability(instance)
+        return probability < self.probability_threshold
 
     @staticmethod
     def count_payouts_since_trigger(instance: Multiplier, trigger_id: str) -> int:
+        """Count how many payouts have occurred since the signal was triggered."""
         trigger_payout = Multiplier.objects.get(id=trigger_id)
         return Multiplier.objects.filter(
             worker=instance.worker,
@@ -166,6 +211,8 @@ class SignalServiceEngine:
         return CacheKeys.SIGNAL_RECORD.format(instance.worker.id)
 
     def _update_cache(self, *, data: SignalRecordDict, instance: Multiplier) -> None:
+        """Update the cache with new data for the signal record."""
+        logger.info(f"Updating signal record: {data}")
         cache.set(self._cache_key(instance), data, 60 * 60 * 2)
 
     @staticmethod
@@ -207,25 +254,30 @@ class SignalServiceEngine:
 
         # Extract relevant fields
         triggered_recently = data.get("triggered_recently", False)
+        is_betting = data.get("is_betting", False)
         should_send_signal = self.evaluator.should_send_signal(instance)
 
         if should_send_signal:
             """Logic to trigger a new signal and start betting."""
+            logger.info(
+                f"Triggering new signal and starting betting session for {data['room_name']}. Triggered by {instance.crash}"
+            )
             signal_data = self._generate_default_record(instance)
+
             metadata: BetMetaData = self.betting_strategy.start()
             signal_data.update(
                 {
                     "triggered_by_payout_id": str(instance.id),
+                    "triggered_by_payout": float(instance.crash),
                     "triggered_at": str(instance.created_at),
                     "triggered_recently": True,
+                    "is_betting": True,
                     "metadata": asdict(metadata),
                 }
             )
-
-            logger.info(f"Start betting feature triggered by: {signal_data}")
             self._send_notification(instance)
 
-        elif triggered_recently:
+        elif triggered_recently and is_betting:
             """Logic to check if we should continue or stop betting."""
             metadata_dict: dict = data.get(
                 "metadata"
@@ -233,25 +285,28 @@ class SignalServiceEngine:
             metadata: BetMetaData = BetMetaData(**metadata_dict)
 
             # Sometimes server restarts so we may have a wrong metadata.current_round. This corrects that.
-            metadata.current_round = (
-                self.evaluator.count_payouts_since_trigger(
-                    instance, data.get("triggered_by_payout_id")
-                )
-                if triggered_recently
-                else metadata.current_round
+            metadata.current_round = self.evaluator.count_payouts_since_trigger(
+                instance, data.get("triggered_by_payout_id")
             )
 
-            should_stop_betting = self.betting_strategy.should_stop(metadata)
+            should_stop_betting = self.betting_strategy.should_stop(
+                metadata, float(instance.crash)
+            )
 
             if should_stop_betting:
                 """Deactivate the signal and stop betting."""
+                logger.info(
+                    f"Stop betting session triggered by {instance.crash} for: {data['room_name']}"
+                )
+
                 signal_data = data.copy()
                 metadata = self.betting_strategy.stop(float(instance.crash), metadata)
 
                 signal_data.update(
                     {
-                        "triggered_recently": False,
+                        "is_betting": False,
                         "stopped_on_payout_id": str(instance.id),
+                        "stopped_on_payout": float(instance.crash),
                         "stopped_tracking_at": str(instance.created_at),
                         "metadata": asdict(metadata),
                     }
@@ -259,6 +314,9 @@ class SignalServiceEngine:
 
             else:
                 """Continue betting."""
+                logger.info(
+                    f"Continue betting session triggered by {instance.crash} for: {data['room_name']}"
+                )
                 signal_data = data.copy()
                 metadata = self.betting_strategy.place_bet(metadata)
                 signal_data["metadata"] = asdict(metadata)
@@ -266,6 +324,10 @@ class SignalServiceEngine:
         else:
             """No change. Payout did not trigger signal and no active betting session."""
             signal_data = data
+
+        if self.evaluator.should_reset_trigger(instance) and triggered_recently:
+            logger.info(f"Resetting signal record for worker: {data['room_name']}")
+            signal_data["triggered_recently"] = False
 
         self._update_cache(data=signal_data, instance=instance)
         return signal_data

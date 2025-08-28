@@ -247,3 +247,21 @@ def set_room_name(*, app: str, worker_name: str, room_no: int | None = None) -> 
 
     cache_key = CacheKeys.SEED_TO_ROOM_MAPPING.format(app, worker_name)
     cache.set(cache_key, room_name, DEFAULT_CACHE_DURATION)
+
+
+def get_strategy_data(app: str) -> list[dict]:
+    """Fetch the latest strategy data for a given app from cache."""
+    workers = Worker.objects.filter(app=app)
+    strategy_data = []
+    for worker in workers:
+        cache_key = CacheKeys.SIGNAL_RECORD.format(worker.id)
+        data = cache.get(cache_key, {})
+        worker_data = {
+            "id": worker.id,
+            "name": worker.name,
+            "room_name": get_room_name(worker.app, worker.name),
+            "data": data,
+        }
+        strategy_data.append(worker_data)
+
+    return strategy_data

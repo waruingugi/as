@@ -76,3 +76,21 @@ def execute_signal_engine_task(multiplier_id: str) -> dict | None:
 
     instance = Multiplier.objects.get(id=multiplier_id)
     signal_service_engine(instance)
+
+
+@shared_task
+def broadcast_strategies_task(app_name: str) -> None:
+    """
+    Update WebSocket channels for the given app's strategy.
+    This function can be used to notify connected clients about updates.
+    """
+
+    channel_layer = get_channel_layer()
+
+    # Notify the predictions group
+    async_to_sync(channel_layer.group_send)(
+        WebSocketChannels.STRATEGY.format(app_name),
+        {
+            "type": "strategy.update",  # Calls `strategy_update` in consumer
+        },
+    )

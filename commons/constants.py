@@ -129,6 +129,7 @@ class WebSocketChannels:
 
     PROBABILITIES = "{}_probabilities"
     HISTORY = "{}_history"
+    STRATEGY = "{}_strategy"
 
 
 class AppPageURL(str, Enum):

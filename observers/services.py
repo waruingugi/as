@@ -6,7 +6,7 @@ from django.core.cache import cache
 
 from analytics.constants import CrashesToMonitor
 from analytics.services import Probability
-from commons.constants import AppPageURL, CacheKeys
+from commons.constants import AppPageURL, CacheKeys, NotificationCollapseID
 from commons.logger import logger
 from commons.utils import get_room_name, send_push_notification
 from notifications.constants import NotificationChannel
@@ -24,6 +24,7 @@ class BetMetaData:
     initial_bankroll: float
     bank_roll: float
     current_round: int
+    current_payout: float
     cashout_at: float
     stake: int
     max_rounds: int
@@ -41,7 +42,7 @@ class SignalRecordDict(TypedDict, total=False):
     triggered_at: Optional[str]
     stopped_on_payout_id: Optional[str]
     stopped_on_payout: float
-    stopped_tracking_at: Optional[str]
+    stopped_at: Optional[str]
     triggered_recently: bool
     is_betting: bool
     metadata: Dict[str, Any]
@@ -67,6 +68,7 @@ class AutoBetStrategy:
             bank_roll=bankroll,
             initial_bankroll=bankroll + self.stake,
             current_round=1,
+            current_payout=0.0,  # Will be updated on first bet
             stake=self.stake,
             cashout_at=self.cashout_at,
             max_rounds=self.max_rounds,
@@ -213,7 +215,7 @@ class SignalServiceEngine:
     def _update_cache(self, *, data: SignalRecordDict, instance: Multiplier) -> None:
         """Update the cache with new data for the signal record."""
         logger.info(f"Updating signal record: {data}")
-        cache.set(self._cache_key(instance), data, 60 * 60 * 2)
+        cache.set(self._cache_key(instance), data, 60 * 60 * 24)
 
     @staticmethod
     def _generate_default_record(instance: Multiplier) -> SignalRecordDict:
@@ -245,6 +247,7 @@ class SignalServiceEngine:
             message=f"{app} {room_name} has a strong over 20x chance. Tap to play!",
             user_ids=list(subscribers),
             app_url=AppPageURL.SIGNALS.value,
+            collapse_id=NotificationCollapseID.SIGNAL.format(app, room_name),
         )
 
     def process_latest_payout(self, instance: Multiplier) -> SignalRecordDict:
@@ -265,6 +268,8 @@ class SignalServiceEngine:
             signal_data = self._generate_default_record(instance)
 
             metadata: BetMetaData = self.betting_strategy.start()
+            metadata.current_payout = float(instance.crash)
+
             signal_data.update(
                 {
                     "triggered_by_payout_id": str(instance.id),
@@ -288,6 +293,7 @@ class SignalServiceEngine:
             metadata.current_round = self.evaluator.count_payouts_since_trigger(
                 instance, data.get("triggered_by_payout_id")
             )
+            metadata.current_payout = float(instance.crash)
 
             should_stop_betting = self.betting_strategy.should_stop(
                 metadata, float(instance.crash)
@@ -307,7 +313,7 @@ class SignalServiceEngine:
                         "is_betting": False,
                         "stopped_on_payout_id": str(instance.id),
                         "stopped_on_payout": float(instance.crash),
-                        "stopped_tracking_at": str(instance.created_at),
+                        "stopped_at": str(instance.created_at),
                         "metadata": asdict(metadata),
                     }
                 )

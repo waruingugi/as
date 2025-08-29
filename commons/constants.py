@@ -138,3 +138,10 @@ class AppPageURL(str, Enum):
     SIGNALS = "rubaniaviatorsignals://aviatorsignals.co.ke/signals"
     SETTINGS = "rubaniaviatorsignals://aviatorsignals.co.ke/settings"
     HOME = "rubaniaviatorsignals://aviatorsignals.co.ke/home"
+
+
+class NotificationCollapseID(str, Enum):
+    """Collapse IDs to group similar notifications."""
+
+    SUBSCRIPTION = "{}_subscription"
+    SIGNAL = "{}_{}_signal"

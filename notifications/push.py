@@ -31,6 +31,7 @@ class OneSignalPush:
         message: str,
         user_ids: list[str],
         app_url: str = None,
+        collapse_id: str = None,
     ) -> bool:
         """
         Send a push notification to one or more users.
@@ -40,6 +41,7 @@ class OneSignalPush:
             message (str): Message to be sent.
             user_ids (list[str]): User IDs to send the notification to.
             app_url (str, optional): URL to open when the notification is clicked.
+            collapse_id (str, optional): Hide previous notifications with the same ID.
 
         Returns:
             bool: True if the notification was sent successfully, False otherwise.
@@ -65,6 +67,7 @@ class OneSignalPush:
             "priority": 10,  # High priority
             "ttl": self.TIMEOUT,  # Time to live
             "app_url": app_url if app_url else self.DEFAULT_APP_URL,
+            "collapse_id": collapse_id,
         }
 
         # Create notifications in bulk

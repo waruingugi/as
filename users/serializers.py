@@ -24,9 +24,7 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         "invalid_credentials": _(
             "The phone number or password is incorrect. Please try again."
         ),
-        "inactive_account": _(
-            "This account has been deactivated. Please contact support."
-        ),
+        "inactive_account": _(ErrorCodes.DEACTIVATED_USER.value),
         "unverified_account": _(
             "This account is not verified. Please contact support."
         ),
@@ -207,8 +205,8 @@ class ResendOTPVerificationSerializer(serializers.Serializer):
 
     def validate(self, data):
         user = User.objects.get(phone_number=data["phone_number"])
-        if user.is_verified:
-            raise serializers.ValidationError(ErrorCodes.USER_IS_VERIFIED.value)
+        if not user.is_active:
+            raise serializers.ValidationError(ErrorCodes.DEACTIVATED_USER.value)
         return data
 
 
@@ -337,9 +335,7 @@ class OTPLoginVerifySerializer(serializers.Serializer):
     """Validates phone + OTP (reuses your OTP validation)."""
 
     default_error_messages = {
-        "inactive_account": _(
-            "This account has been deactivated. Please contact support."
-        ),
+        "inactive_account": _(ErrorCodes.DEACTIVATED_USER.value),
         "invalid_credentials": _(
             "The phone number or OTP is incorrect. Please try again."
         ),

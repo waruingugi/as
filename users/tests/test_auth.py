@@ -237,8 +237,8 @@ class ResendOTPVerificationTestCase(UserBaseAPITestCase):
     @patch("users.views.auth.send_push_task.delay")
     @patch("users.views.auth.create_otp")
     @patch("users.views.auth.send_sms_task.delay")
-    def test_user_is_already_verified(self, mock_send_sms, mock_create_otp, _) -> None:
-        self.user.is_verified = True
+    def test_user_is_deactivated(self, mock_send_sms, mock_create_otp, _) -> None:
+        self.user.is_active = False
         self.user.save()
 
         response = self.client.post(self.url, self.data, format="json")

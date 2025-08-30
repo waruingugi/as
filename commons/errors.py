@@ -18,3 +18,4 @@ class ErrorCodes(str, Enum):
     WORKERS_NOT_FOUND = "No workers found for the specified app."
     PHONE_NUMBER_EXISTS = "This phone number is already taken."
     INVALID_OTP = "The OTP entered is incorrect. Please try again"
+    DEACTIVATED_USER = "This account has been deactivated. Please contact support."

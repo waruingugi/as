@@ -246,7 +246,7 @@ class SignalServiceEngine:
         send_push_notification(
             notification_type=NotificationChannel.PUSH.value,
             title=f"{app} Signal Alert",
-            message=f"{app} {room_name} has a strong over 20x chance. Tap to play!",
+            message=f"{room_name} has a strong over 20x chance. Tap to play!",
             user_ids=list(subscribers),
             app_url=AppPageURL.SIGNALS.value,
             collapse_id=NotificationCollapseID.SIGNAL.format(app, room_name),

@@ -62,7 +62,9 @@ def get_over_20x_suggestion(worker_id: str, probability: float) -> str:
 
     # Cache the new suggestion with the current range
     cache.set(
-        cache_key, {"range": current_range, "suggestion": new_suggestion}, timeout=None
+        cache_key,
+        {"range": current_range, "suggestion": new_suggestion},
+        timeout=60 * 60,
     )
 
     return new_suggestion

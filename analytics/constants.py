@@ -15,6 +15,27 @@ class CrashesToMonitor(float, Enum):
 # Default Cache duration for Probability Analytics class
 PROB_DEFAULT_CACHE_DURATION: int = 600
 
+
+OVER_20X_SUGGESTIONS = {
+    "LOW": [  # No signal has been sent and the probability is low
+        "This is a bad time to bet. Please wait for signal.",
+        "Very low chance of an over 20x. Wait it out.",
+        "Save your money and hold off betting for now.",
+        "Minimal over 20x chance. Skip the next few rounds.",
+    ],
+    "MODERATE": [  # The probability is high but no signal has been sent
+        "Bet small or wait for over 20x signal, your call.",
+        "An over 20x could happen soon. Wait for signal.",
+        "Bet only if your feel confident. Otherwise wait.",
+    ],
+    "HIGH": [  # A signal has been sent and the probability is high
+        "Over 20x signal was sent recently. Start betting now.",
+        "An over 20x is likely soon. Signal has been sent.",
+        "A new signal just fired. An over 20x is close.",
+        "A new signal just came in. A 20x crash is near.",
+    ],
+}
+
 # # Over 20x suggestions
 # OVER_20X_SUGGESTIONS = {
 #     "EXTREME": [
@@ -46,33 +67,35 @@ PROB_DEFAULT_CACHE_DURATION: int = 600
 #         "Small chance for 20x—holding off could be smarter.",
 #     ],
 # }
-OVER_20X_SUGGESTIONS = {
-    "EXTREME": [
-        "Odds are high! Bet now but do not go all in.",
-        "An over 20x chance is very high. But it is risky.",
-        "This odds mean a big win or loss is near.",
-        "Extreme chances. Your call on how to play this.",
-        "Watch the trend. An over 20x will happen soon.",
-    ],
-    "HIGH": [
-        "High 20x odds. This could be your moment.",
-        "Strong chance for an over 20x. Now is the time.",
-        "An over 20x is likely to happen in a few minutes.",
-        "20x is around the corner. Start betting now.",
-        "Chance is solid. Take the shot if you are ready.",
-    ],
-    "MODERATE": [
-        "Moderate 20x shot. Bet if you feel confident.",
-        "Fair chance for a 20x. Make your move wisely.",
-        "20x could happen soon. Bet small or wait it out.",
-        "Decent odds. Your call on how to play this.",
-        "Moderate chance. Bet now or hold off, your pick.",
-    ],
-    "LOW": [
-        "Low odds for 20x. Waiting might be smarter.",
-        "Chance is slim. Bet on low crashes for now.",
-        "Minimal 20x chance. Skip the next few rounds.",
-        "Probably not worth it. An over 20x is unlikely.",
-        "Small chance for 20x. Wait for better chances.",
-    ],
-}
+
+
+# OVER_20X_SUGGESTIONS = {
+#     "EXTREME": [
+#         "Odds are high! Bet now but do not go all in.",
+#         "An over 20x chance is very high. But it is risky.",
+#         "This odds mean a big win or loss is near.",
+#         "Extreme chances. Your call on how to play this.",
+#         "Watch the trend. An over 20x will happen soon.",
+#     ],
+#     "HIGH": [
+#         "High 20x odds. This could be your moment.",
+#         "Strong chance for an over 20x. Now is the time.",
+#         "An over 20x is likely to happen in a few minutes.",
+#         "20x is around the corner. Start betting now.",
+#         "Chance is solid. Take the shot if you are ready.",
+#     ],
+#     "MODERATE": [
+#         "Moderate 20x shot. Bet if you feel confident.",
+#         "Fair chance for a 20x. Make your move wisely.",
+#         "20x could happen soon. Bet small or wait it out.",
+#         "Decent odds. Your call on how to play this.",
+#         "Moderate chance. Bet now or hold off, your pick.",
+#     ],
+#     "LOW": [
+#         "Low odds for 20x. Waiting might be smarter.",
+#         "Chance is slim. Bet on low crashes for now.",
+#         "Minimal 20x chance. Skip the next few rounds.",
+#         "Probably not worth it. An over 20x is unlikely.",
+#         "Small chance for 20x. Wait for better chances.",
+#     ],
+# }

@@ -8,7 +8,7 @@ from analytics.constants import CrashesToMonitor
 from analytics.services import Probability
 from commons.constants import AppPageURL, CacheKeys, NotificationCollapseID
 from commons.logger import logger
-from commons.utils import get_room_name, send_push_notification
+from commons.utils import get_room_name, get_worker_health, send_push_notification
 from notifications.constants import NotificationChannel
 from observers.models import Multiplier
 from observers.utils import get_app_subscribers
@@ -117,16 +117,18 @@ class SignalEvaluator:
 
     def should_send_signal(self, instance: Multiplier) -> bool:
         """All conditions below must be met to send a signal."""
+        worker_is_healthy = get_worker_health(str(instance.worker.id))
         return (
             (self._has_low_streak(instance) or self._low_streak_is_close(instance))
             and self._probability_high(instance)
-            and not self._has_been_triggered_recently(instance)
+            and not self.has_been_triggered_recently(str(instance.worker.id))
+            and worker_is_healthy
         )
 
     @staticmethod
-    def _has_been_triggered_recently(instance: Multiplier) -> bool:
+    def has_been_triggered_recently(worker_id: str) -> bool:
         """Check if a signal has been triggered recently for the worker."""
-        cache_key = CacheKeys.SIGNAL_RECORD.format(instance.worker.id)
+        cache_key = CacheKeys.SIGNAL_RECORD.format(worker_id)
         data = cache.get(cache_key) or {}
         return bool(data.get("triggered_recently", False))
 

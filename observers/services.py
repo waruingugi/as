@@ -22,7 +22,7 @@ from observers.utils import get_app_subscribers
 class BetMetaData:
     strategy_name: str
     initial_bankroll: float
-    bank_roll: float
+    bankroll: float
     current_round: int
     current_payout: float
     cashout_at: float
@@ -65,7 +65,7 @@ class AutoBetStrategy:
         bankroll -= self.stake
         return BetMetaData(
             strategy_name=self.name,
-            bank_roll=bankroll,
+            bankroll=bankroll,
             initial_bankroll=bankroll + self.stake,
             current_round=1,
             current_payout=0.0,  # Will be updated on first bet
@@ -79,7 +79,7 @@ class AutoBetStrategy:
     @staticmethod
     def place_bet(meta: BetMetaData) -> BetMetaData:
         """Place a bet and update metadata."""
-        meta.bank_roll -= meta.stake
+        meta.bankroll -= meta.stake
         meta.current_round += 1
         meta.loss += meta.stake
         return meta
@@ -89,7 +89,7 @@ class AutoBetStrategy:
         """Stop betting and update metadata."""
         if payout >= meta.cashout_at:
             net_profit = meta.stake * (meta.cashout_at - 1)
-            meta.bank_roll += net_profit
+            meta.bankroll += net_profit
 
             meta.profit += net_profit
             logger.info(f"Bet won at {payout}x. New meta is {asdict(meta)}")
@@ -99,7 +99,7 @@ class AutoBetStrategy:
     def should_stop(meta: BetMetaData, payout: float) -> bool:
         """Should we stop betting?"""
         has_reached_max_rounds = meta.current_round >= meta.max_rounds
-        has_insufficient_bankroll = meta.bank_roll < meta.stake
+        has_insufficient_bankroll = meta.bankroll < meta.stake
         has_won = payout >= meta.cashout_at
 
         return has_reached_max_rounds or has_insufficient_bankroll or has_won

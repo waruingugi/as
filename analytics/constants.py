@@ -18,20 +18,20 @@ PROB_DEFAULT_CACHE_DURATION: int = 600
 OVER_20X_SUGGESTIONS = {
     "LOW": [  # No signal has been sent and the probability is low
         "This is a bad time to bet. Please wait for signal.",
-        "Very low chance of an over 20x. Wait it out.",
+        "Very low chance of an over 20x. Best to wait it out.",
         "Save your money and hold off betting for now.",
         "Minimal over 20x chance. Skip the next few rounds.",
     ],
     "MODERATE": [  # The probability is high but no signal has been sent
-        "Bet small or wait for over 20x signal, your call.",
-        "An over 20x could happen soon. Wait for signal.",
-        "Bet only if your feel confident. Otherwise wait.",
+        "Bet small or wait for an over 20x signal, your call.",
+        "An over 20x could happen soon. Please wait for signal.",
+        "Bet only if your feel confident. Otherwise wait it out.",
     ],
     "HIGH": [  # A signal has been sent and the probability is high
         "Over 20x signal was sent recently. Start betting now.",
         "An over 20x is likely soon. Signal has been sent.",
         "A new signal just fired. An over 20x is close.",
-        "A new signal just came in. A 20x crash is near.",
+        "A new signal just came in. An over 20x crash is near.",
     ],
 }
 

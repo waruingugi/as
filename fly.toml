@@ -48,6 +48,8 @@ kill_timeout = '10s'
 [[vm]]
   size = 'shared-cpu-2x'
   processes = ['app']
+  memory = '2048MB'
+  cpu_kind = 'shared'
 
 [[vm]]
   size = 'shared-cpu-1x'

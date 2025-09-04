@@ -266,6 +266,15 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [os.environ["REDIS_URL"]],
+            # Small global default
+            "capacity": 50,  # default per-channel buffer
+            # Per-pattern tuning (websocket connections are "specific.*")
+            "channel_capacity": {
+                "specific.*": 50,  # each websocket connection
+                # you can tune others if you use custom channels
+            },
+            "expiry": 10,  # drop undelivered messages fast
+            "group_expiry": 60,  # clean up stale group members quickly
         },
     },
 }

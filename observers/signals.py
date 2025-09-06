@@ -34,34 +34,3 @@ def handle_bulk_created(sender, instances, **kwargs) -> None:
 
     # Execute the signal engine task
     execute_signal_engine_task.delay(instances[-1].id)
-
-    # # Delegate to the analytics app
-    # Probability.recompute_time_since_last_crash(instances)
-    #
-    # # Refresh query for specific worker ids
-    # refresh_worker_crash_query(instances)
-    #
-    # # Alert the signal monitor
-    # SignalNotificationMonitor.process_latest_payout(
-    #     instances[-1]
-    # )  # Process the latest payout
-
-    # websocket notification to update probabilities
-    # channel_layer = get_channel_layer()
-    # app_name = instances[-1].worker.app  # Adjust if needed
-    #
-    # async_to_sync(channel_layer.group_send)(
-    #     f"probabilities_{app_name}",
-    #     {
-    #         "type": "probability.update",  # Calls `probability_update` in consumer
-    #     },
-    # )
-    # channel_layer = get_channel_layer()
-    # app_name = instances[-1].worker.app  # Or the relevant app
-    #
-    # async_to_sync(channel_layer.group_send)(
-    #     f"workerhistory_{app_name}",
-    #     {
-    #         "type": "history.update",  # This triggers `history_update` in the consumer
-    #     },
-    # )

@@ -1,7 +1,6 @@
 from hashlib import md5, sha256
 from uuid import uuid4
 
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.core.cache import cache
 
 from commons.constants import (
@@ -12,7 +11,6 @@ from commons.constants import (
     NotificationCollapseID,
 )
 from commons.logger import logger
-from commons.mixins import AsyncWebSocketAuthMixin
 from notifications.constants import NotificationChannel
 from users.models import SignalSetting
 
@@ -188,13 +186,3 @@ def send_push_notification(
     # Raise error if all providers failed here
     logger.error("Failed to send push notification in the background")
     return False
-
-
-class AuthJsonWebsocketConsumer(AsyncWebSocketAuthMixin, AsyncJsonWebsocketConsumer):
-    async def authenticate(self) -> bool:
-        try:
-            self.scope["user"] = await self.authenticate_user()
-        except Exception:
-            await self.close()
-            return False
-        return True

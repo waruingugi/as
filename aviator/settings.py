@@ -267,14 +267,9 @@ CHANNEL_LAYERS = {
         "CONFIG": {
             "hosts": [os.environ["REDIS_URL"]],
             # Small global default
-            "capacity": 50,  # default per-channel buffer
-            # Per-pattern tuning (websocket connections are "specific.*")
-            "channel_capacity": {
-                "specific.*": 50,  # each websocket connection
-                # you can tune others if you use custom channels
-            },
-            "expiry": 10,  # drop undelivered messages fast
-            "group_expiry": 60,  # clean up stale group members quickly
+            "capacity": 5,  # default per-channel buffer
+            "expiry": 120,  # how long an undelivered message stays in Redis before it’s discarded
+            "group_expiry": 300,  # how long a group and its members stay in Redis if no activity (5 minutes)
         },
     },
 }

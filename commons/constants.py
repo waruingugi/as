@@ -74,6 +74,15 @@ class CacheKeys:
         "worker_id:{}:signal_record"  # Store signal records for a specific worker
     )
 
+    APP_HISTORY_SNAPSHOT = "app:{}:history_snapshot"
+    APP_HISTORY_LOCK_KEY = "app:{}:history_lock"
+
+    APP_STRATEGY_SNAPSHOT = "app:{}:strategy_snapshot"
+    APP_STRATEGY_LOCK_KEY = "app:{}:strategy_lock"
+
+    APP_PROBABILITY_SNAPSHOT = "app:{}:probabilities_snapshot"
+    APP_PROBABILITY_LOCK_KEY = "app:{}:probabilities_lock"
+
 
 class SeedName(str, Enum):
     """Seed name options."""

@@ -100,7 +100,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "aviator.local_wsgi.application"
+WSGI_APPLICATION = "aviator.asgi.application"
 
 
 # Database
@@ -247,6 +247,10 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [os.environ["REDIS_URL"]],
+            # Small global default
+            "capacity": 5,  # default per-channel buffer
+            "expiry": 120,  # how long an undelivered message stays in Redis before it’s discarded
+            "group_expiry": 300,  # how long a group and its members stay in Redis if no activity (5 minutes)
         },
     },
 }
